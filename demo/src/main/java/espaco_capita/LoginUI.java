@@ -14,11 +14,19 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
+
 /**
  * Interface de Login/Registro para o sistema de Espaço Capital - Coworking System
  */
 public class LoginUI extends JFrame {
     
+
+
+    private JPanel resetPasswordPanel;
+    private JTextField emailResetField;
+    private JPasswordField newPasswordField;
+    private JPasswordField confirmPasswordField;
+
     // Cores do sistema conforme a paleta definida
     private final Color VERDE_PRINCIPAL = Color.decode("#007a3e");
     private final Color CINZA_ESCURO = Color.decode("#3a3838");
@@ -119,7 +127,178 @@ public class LoginUI extends JFrame {
             e.printStackTrace();
         }
     }
-    
+    private void createResetPasswordPanel() {
+        resetPasswordPanel = new JPanel(new GridBagLayout());
+        resetPasswordPanel.setBackground(BRANCO);
+        resetPasswordPanel.setBorder(new EmptyBorder(30, 30, 30, 30));
+        
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridwidth = GridBagConstraints.REMAINDER;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.anchor = GridBagConstraints.CENTER;
+        gbc.insets = new Insets(5, 10, 5, 10);
+        
+        // Título com animação de digitação
+        JLabel titleLabel = new JLabel("Redefinir Senha");
+        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 28));
+        titleLabel.setForeground(CINZA_ESCURO);
+        titleLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        
+        // Subtítulo
+        JLabel subtitleLabel = new JLabel("Crie uma nova senha para sua conta");
+        subtitleLabel.setFont(new Font("Segoe UI", Font.PLAIN, 16));
+        subtitleLabel.setForeground(CINZA_ESCURO);
+        subtitleLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        
+        // Campo de e-mail (desabilitado, apenas para mostrar qual conta)
+        JPanel emailPanel = createTextField("E-mail", "Seu e-mail", "email.png");
+        emailResetField = getTextFieldFromPanel(emailPanel);
+        emailResetField.setEditable(false);  // E-mail não pode ser editado
+        
+        // Campo de nova senha
+        JPanel newPasswordPanel = createPasswordFieldWithStrengthMeter("Nova senha", "Digite sua nova senha", "lock.png");
+        newPasswordField = getPasswordFieldFromPanel(newPasswordPanel);
+        
+        // Campo de confirmação de senha
+        JPanel confirmPasswordPanel = createSimplePasswordField("Confirmar senha", "Confirme sua nova senha", "lock.png");
+        confirmPasswordField = getPasswordFieldFromPanel(confirmPasswordPanel);
+        
+        // Botão de redefinir senha
+        JButton resetButton = createAnimatedButton("Redefinir Senha", VERDE_PRINCIPAL, BRANCO);
+        resetButton.addActionListener(e -> {
+            atualizarSenha();
+        });
+        
+        // Botão para voltar ao login
+        JLabel backToLoginLabel = new JLabel("Voltar ao login", SwingConstants.CENTER);
+        backToLoginLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        backToLoginLabel.setForeground(VERDE_PRINCIPAL);
+        backToLoginLabel.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        
+        // Adiciona underline ao passar o mouse
+        backToLoginLabel.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                backToLoginLabel.setText("<html><u>Voltar ao login</u></html>");
+            }
+            
+            @Override
+            public void mouseExited(MouseEvent e) {
+                backToLoginLabel.setText("Voltar ao login");
+            }
+            
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                animateCardSwitch(false);  // Volta para o login
+            }
+        });
+        
+        // Adiciona componentes ao painel
+        gbc.insets = new Insets(20, 10, 15, 10);
+        resetPasswordPanel.add(titleLabel, gbc);
+        
+        gbc.insets = new Insets(0, 10, 25, 10);
+        resetPasswordPanel.add(subtitleLabel, gbc);
+        
+        gbc.insets = new Insets(5, 10, 15, 10);
+        resetPasswordPanel.add(emailPanel, gbc);
+        
+        gbc.insets = new Insets(15, 10, 15, 10);
+        resetPasswordPanel.add(newPasswordPanel, gbc);
+        
+        gbc.insets = new Insets(15, 10, 30, 10);
+        resetPasswordPanel.add(confirmPasswordPanel, gbc);
+        
+        gbc.insets = new Insets(15, 10, 20, 10);
+        resetPasswordPanel.add(resetButton, gbc);
+        
+        gbc.insets = new Insets(0, 10, 10, 10);
+        resetPasswordPanel.add(backToLoginLabel, gbc);
+        
+        // Adiciona ao cardPanel
+        cardPanel.add(resetPasswordPanel, "reset");
+    }
+    private boolean atualizarSenha() {
+        String email = emailResetField.getText();
+        String novaSenha = new String(newPasswordField.getPassword());
+        String confirmarSenha = new String(confirmPasswordField.getPassword());
+        
+        // Verificar se os campos não estão vazios
+        if (novaSenha.isEmpty() || novaSenha.equals("Digite sua nova senha") || 
+            confirmarSenha.isEmpty() || confirmarSenha.equals("Confirme sua nova senha")) {
+            JOptionPane.showMessageDialog(this, 
+                "Por favor, preencha todos os campos.", 
+                "Erro de Redefinição", 
+                JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
+        
+        // Verificar se as senhas coincidem
+        if (!novaSenha.equals(confirmarSenha)) {
+            JOptionPane.showMessageDialog(this, 
+                "As senhas não coincidem.", 
+                "Erro de Redefinição", 
+                JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
+        
+        // Verificar a força da senha
+        if (calculatePasswordStrength(novaSenha) < 60) {
+            JOptionPane.showMessageDialog(this, 
+                "Por favor, escolha uma senha mais forte.", 
+                "Senha Fraca", 
+                JOptionPane.WARNING_MESSAGE);
+            return false;
+        }
+        
+        try {
+            // Ler o arquivo CSV
+            List<String> linhas = new ArrayList<>();
+            BufferedReader reader = new BufferedReader(new FileReader(CSV_FILE));
+            String line;
+            
+            // Adicionar cabeçalho
+            linhas.add(reader.readLine());
+            
+            // Processar as linhas restantes
+            while ((line = reader.readLine()) != null) {
+                String[] parts = line.split(",");
+                if (parts.length >= 3) {
+                    String csvEmail = parts[1].trim();
+                    
+                    if (csvEmail.equals(email)) {
+                        // Atualizar a senha para este usuário
+                        line = parts[0] + "," + csvEmail + "," + novaSenha.replace(",", ";");
+                    }
+                }
+                linhas.add(line);
+            }
+            reader.close();
+            
+            // Escrever de volta para o arquivo
+            FileWriter writer = new FileWriter(CSV_FILE);
+            for (String linha : linhas) {
+                writer.write(linha + "\n");
+            }
+            writer.close();
+            
+            JOptionPane.showMessageDialog(this, 
+                "Senha redefinida com sucesso!\nAgora você pode fazer login com sua nova senha.", 
+                "Sucesso", 
+                JOptionPane.INFORMATION_MESSAGE);
+            
+            // Voltar para a tela de login
+            animateCardSwitch(false);
+            
+            return true;
+        } catch (IOException e) {
+            JOptionPane.showMessageDialog(this, 
+                "Erro ao atualizar senha: " + e.getMessage(), 
+                "Erro", 
+                JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
+    }
     private void initComponents() {
         // Painel principal com BorderLayout
         mainPanel = new JPanel(new BorderLayout());
@@ -189,6 +368,8 @@ public class LoginUI extends JFrame {
         
         // Adiciona o painel principal ao frame
         setContentPane(mainPanel);
+
+        createResetPasswordPanel();
     }
     
     private void createLoginPanel() {
@@ -252,10 +433,28 @@ public class LoginUI extends JFrame {
                 if (email != null && !email.trim().isEmpty()) {
                     // Verificar se o e-mail existe no CSV
                     if (verificarEmailExistente(email)) {
-                        JOptionPane.showMessageDialog(LoginUI.this, 
-                            "Um link para redefinição de senha foi enviado para seu e-mail.",
-                            "Redefinição de Senha", 
-                            JOptionPane.INFORMATION_MESSAGE);
+                        // Definir o e-mail no campo de e-mail da tela de reset
+                        emailResetField.setText(email);
+                        emailResetField.setForeground(CINZA_ESCURO);
+                        
+                        // Limpar campos de senha
+                        newPasswordField.setText("Digite sua nova senha");
+                        newPasswordField.setEchoChar((char) 0);
+                        newPasswordField.setForeground(new Color(180, 180, 180));
+                        
+                        confirmPasswordField.setText("Confirme sua nova senha");
+                        confirmPasswordField.setEchoChar((char) 0);
+                        confirmPasswordField.setForeground(new Color(180, 180, 180));
+                        
+                        // Mostrar tela de redefinição de senha
+                        CardLayout cl = (CardLayout) cardPanel.getLayout();
+                        cl.show(cardPanel, "reset");
+                        
+                        // Adicionar animação de digitação ao título
+                        JLabel titleLabel = findTitleLabel(resetPasswordPanel);
+                        if (titleLabel != null) {
+                            animateTypingText(titleLabel, "Redefinir Senha", 80);
+                        }
                     } else {
                         JOptionPane.showMessageDialog(LoginUI.this, 
                             "E-mail não encontrado no sistema.",
@@ -1088,24 +1287,42 @@ public class LoginUI extends JFrame {
     }
     
     // Animação de transição entre os painéis
-    private void animateCardSwitch(boolean toRegister) {
-        CardLayout cl = (CardLayout) cardPanel.getLayout();
-        if (toRegister) {
-            cl.show(cardPanel, "register");
-            // Se quiser adicionar animação de digitação ao título do registro
-            JLabel titleLabel = findTitleLabel(registerPanel);
-            if (titleLabel != null) {
-                animateTypingText(titleLabel, "Crie sua conta", 80);
-            }
-        } else {
-            cl.show(cardPanel, "login");
-            // Se quiser adicionar animação de digitação ao título do login
-            JLabel titleLabel = findTitleLabel(loginPanel);
-            if (titleLabel != null) {
-                animateTypingText(titleLabel, "Bem-vindo de volta!", 80);
-            }
+// Animação de transição entre os painéis
+private void animateCardSwitch(boolean toRegister) {
+    CardLayout cl = (CardLayout) cardPanel.getLayout();
+    if (toRegister) {
+        cl.show(cardPanel, "register");
+        // Se quiser adicionar animação de digitação ao título do registro
+        JLabel titleLabel = findTitleLabel(registerPanel);
+        if (titleLabel != null) {
+            animateTypingText(titleLabel, "Crie sua conta", 80);
         }
-        isLoginShowing = !toRegister;
+    } else {
+        cl.show(cardPanel, "login");
+        // Se quiser adicionar animação de digitação ao título do login
+        JLabel titleLabel = findTitleLabel(loginPanel);
+        if (titleLabel != null) {
+            animateTypingText(titleLabel, "Bem-vindo de volta!", 80);
+        }
+    }
+    isLoginShowing = !toRegister;
+}
+
+    // Método adicional para alternar para a tela de redefinição de senha
+    private void showResetPasswordScreen(String email) {
+        // Definir o e-mail
+        emailResetField.setText(email);
+        emailResetField.setForeground(CINZA_ESCURO);
+        
+        // Mostrar o painel
+        CardLayout cl = (CardLayout) cardPanel.getLayout();
+        cl.show(cardPanel, "reset");
+        
+        // Animação de digitação para o título
+        JLabel titleLabel = findTitleLabel(resetPasswordPanel);
+        if (titleLabel != null) {
+            animateTypingText(titleLabel, "Redefinir Senha", 80);
+        }
     }
     
     // Método auxiliar para calcular a força da senha
