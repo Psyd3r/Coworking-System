@@ -1,26 +1,21 @@
 package espaco_capita;
 
 import com.formdev.flatlaf.FlatLightLaf;
-
-import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
-import javax.swing.event.DocumentListener;
-import javax.swing.event.DocumentListener;
 import javax.swing.event.DocumentEvent;
-
+import javax.swing.event.DocumentListener;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.geom.RoundRectangle2D;
 import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
  * Interface de Login/Registro para o sistema de Espaço Capital - Coworking System
- * Versão melhorada com carrossel de imagens, animações e UX aprimorada
  */
 public class LoginUI extends JFrame {
     
@@ -33,13 +28,25 @@ public class LoginUI extends JFrame {
     
     // Componentes da interface
     private JPanel mainPanel;
+    private JPanel leftPanel;
     private JPanel rightPanel;
     private JPanel loginPanel;
     private JPanel registerPanel;
-    private JLayeredPane cardPanel;
+    private JPanel cardPanel;
     
-    // Componente do carrossel
-    private ImageCarousel carousel;
+    // Campos do formulário
+    private JTextField emailLoginField;
+    private JPasswordField passwordLoginField;
+    private JTextField nameRegisterField;
+    private JTextField emailRegisterField;
+    private JPasswordField passwordRegisterField;
+    
+    // Arquivo CSV
+    private final String CSV_FILE = "usuarios.csv";
+    
+    // Ícones para mostrar/ocultar senha
+    private ImageIcon eyeIcon;
+    private ImageIcon eyeCrossedIcon;
     
     // Estado atual
     private boolean isLoginShowing = true;
@@ -58,11 +65,59 @@ public class LoginUI extends JFrame {
         setLocationRelativeTo(null);
         setResizable(false);
         
+        // Verifica se o arquivo CSV existe, se não, cria-o
+        criarArquivoCSVSeNaoExistir();
+        
+        // Carrega os ícones
+        loadIcons();
+        
         // Inicializa os componentes
         initComponents();
         
         // Exibe o frame
         setVisible(true);
+    }
+    
+    // Método para criar o arquivo CSV se não existir
+    private void criarArquivoCSVSeNaoExistir() {
+        File arquivo = new File(CSV_FILE);
+        if (!arquivo.exists()) {
+            try {
+                arquivo.createNewFile();
+                // Adiciona o cabeçalho
+                FileWriter fw = new FileWriter(arquivo);
+                fw.write("nome,email,senha\n");
+                fw.close();
+            } catch (IOException e) {
+                JOptionPane.showMessageDialog(this, 
+                    "Erro ao criar arquivo CSV: " + e.getMessage(), 
+                    "Erro", JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }
+    
+    private void loadIcons() {
+        try {
+            // Carrega e redimensiona os ícones uma única vez
+            ImageIcon originalEyeIcon = loadIcon("icons/eye.png");
+            ImageIcon originalEyeCrossedIcon = loadIcon("icons/eye-crossed.png");
+            
+            if (originalEyeIcon != null && originalEyeCrossedIcon != null) {
+                Image eyeImg = originalEyeIcon.getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH);
+                Image eyeCrossedImg = originalEyeCrossedIcon.getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH);
+                
+                eyeIcon = new ImageIcon(eyeImg);
+                eyeCrossedIcon = new ImageIcon(eyeCrossedImg);
+            } else {
+                // Fallback para ícones vazios
+                eyeIcon = new ImageIcon();
+                eyeCrossedIcon = new ImageIcon();
+            }
+        } catch (Exception e) {
+            eyeIcon = new ImageIcon();
+            eyeCrossedIcon = new ImageIcon();
+            e.printStackTrace();
+        }
     }
     
     private void initComponents() {
@@ -71,28 +126,54 @@ public class LoginUI extends JFrame {
         mainPanel.setBackground(BRANCO);
         
         // Cria o carrossel de imagens para o lado esquerdo
-        String resourcesPath = "C:\\Users\\joaog\\Documents\\Programas\\Espaço Capital - Coworking System\\demo\\src\\main\\resources";
-        List<String> imagePaths = new ArrayList<>();
+        String resourcesPath = "src/main/resources";
         
-        // Adiciona caminhos das imagens (atualize com os nomes corretos dos seus flyers)
-        imagePaths.add(resourcesPath + "\\flyer1.png");
-        
-        // Você pode adicionar mais flyers ao carrossel aqui
-        // Por exemplo:
-         imagePaths.add(resourcesPath + "\\flyer2.png");
-         imagePaths.add(resourcesPath + "\\flyer3.png");
-        
-        // Cria o carrossel
-        carousel = new ImageCarousel(imagePaths, 450, 550, 5000); // 5000ms = 5s de intervalo entre slides
-        carousel.setPreferredSize(new Dimension(450, 550));
+        // Carrega a imagem para o painel esquerdo
+        leftPanel = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                
+                // Tenta carregar a imagem de fundo
+                ImageIcon bgImage = loadIcon("flyer1.png");
+                if (bgImage != null) {
+                    g2.drawImage(bgImage.getImage(), 0, 0, getWidth(), getHeight(), this);
+                    
+                    // Adiciona uma camada parcialmente transparente para legibilidade
+                    g2.setColor(new Color(0, 0, 0, 80));
+                    g2.fillRect(0, 0, getWidth(), getHeight());
+                } else {
+                    // Fallback para um gradiente se a imagem não puder ser carregada
+                    GradientPaint gp = new GradientPaint(0, 0, VERDE_PRINCIPAL, 
+                                                        getWidth(), getHeight(), 
+                                                        new Color(0, 100, 50));
+                    g2.setPaint(gp);
+                    g2.fillRect(0, 0, getWidth(), getHeight());
+                    
+                    // Desenha formas decorativas
+                    g2.setColor(new Color(255, 255, 255, 30));
+                    g2.fillOval(-50, -50, 200, 200);
+                    g2.fillOval(getWidth() - 100, getHeight() - 100, 200, 200);
+                    
+                    g2.setColor(new Color(255, 255, 255, 20));
+                    g2.fillOval(getWidth() - 200, 50, 300, 300);
+                    g2.fillOval(50, getHeight() - 200, 200, 200);
+                }
+                
+                g2.dispose();
+            }
+        };
+        leftPanel.setPreferredSize(new Dimension(450, 550));
         
         // Painel direito para login/registro
         rightPanel = new JPanel(new BorderLayout());
         rightPanel.setBackground(BRANCO);
         
         // LayeredPane para animações
-        cardPanel = new JLayeredPane();
-        cardPanel.setLayout(null); // Usamos posicionamento absoluto para animações
+        cardPanel = new JPanel(new CardLayout());
+        cardPanel.setBackground(BRANCO);
         
         // Cria painel de login
         createLoginPanel();
@@ -100,191 +181,16 @@ public class LoginUI extends JFrame {
         // Cria painel de registro
         createRegisterPanel();
         
-        // Inicialmente, o painel de registro está fora da tela (à direita)
-        loginPanel.setBounds(0, 0, 450, 550);
-        registerPanel.setBounds(450, 0, 450, 550); // Começa fora da tela
-        
-        // Ajusta o painel direito
         rightPanel.add(cardPanel, BorderLayout.CENTER);
         
         // Adiciona os painéis ao painel principal
-        mainPanel.add(carousel, BorderLayout.WEST);
+        mainPanel.add(leftPanel, BorderLayout.WEST);
         mainPanel.add(rightPanel, BorderLayout.CENTER);
         
         // Adiciona o painel principal ao frame
         setContentPane(mainPanel);
     }
     
-    /**
-     * Classe interna para implementar o carrossel de imagens
-     */
-    private class ImageCarousel extends JPanel {
-        private final List<Image> images = new ArrayList<>();
-        private final List<String> imagePaths;
-        private int currentIndex = 0;
-        private final Timer timer;
-        private final int width;
-        private final int height;
-        
-        // Painel de indicadores
-        private JPanel indicatorsPanel;
-        
-        public ImageCarousel(List<String> imagePaths, int width, int height, int interval) {
-            this.imagePaths = imagePaths;
-            this.width = width;
-            this.height = height;
-            
-            setLayout(new BorderLayout());
-            
-            // Carrega as imagens
-            loadImages();
-            
-            // Cria os indicadores
-            createIndicators();
-            
-            // Cria o timer para troca automática de slides
-            timer = new Timer(interval, e -> {
-                nextImage();
-                updateIndicators();
-            });
-            timer.start();
-            
-            // Adiciona evento para pausar o timer quando o mouse está sobre o carrossel
-            addMouseListener(new MouseAdapter() {
-                @Override
-                public void mouseEntered(MouseEvent e) {
-                    timer.stop();
-                }
-                
-                @Override
-                public void mouseExited(MouseEvent e) {
-                    timer.start();
-                }
-            });
-            
-            // Adiciona evento de clique para avançar manualmente
-            addMouseListener(new MouseAdapter() {
-                @Override
-                public void mouseClicked(MouseEvent e) {
-                    // Avança para a próxima imagem se clicado na metade direita
-                    // Retorna para a imagem anterior se clicado na metade esquerda
-                    if (e.getX() > width / 2) {
-                        nextImage();
-                    } else {
-                        previousImage();
-                    }
-                    updateIndicators();
-                }
-            });
-        }
-        
-        private void loadImages() {
-            for (String path : imagePaths) {
-                try {
-                    Image img = ImageIO.read(new File(path));
-                    if (img != null) {
-                        // Redimensiona para caber no carrossel
-                        img = img.getScaledInstance(width, height, Image.SCALE_SMOOTH);
-                        images.add(img);
-                    }
-                } catch (IOException e) {
-                    System.err.println("Erro ao carregar a imagem: " + path);
-                    e.printStackTrace();
-                }
-            }
-            
-            // Se não houver imagens carregadas, adiciona um placeholder
-            if (images.isEmpty()) {
-                BufferedImage placeholder = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
-                Graphics2D g2 = placeholder.createGraphics();
-                g2.setColor(VERDE_PRINCIPAL);
-                g2.fillRect(0, 0, width, height);
-                g2.setColor(Color.WHITE);
-                g2.setFont(new Font("Segoe UI", Font.BOLD, 24));
-                g2.drawString("ESPAÇO CAPITAL", width/2 - 100, height/2 - 20);
-                g2.drawString("Coworking System", width/2 - 90, height/2 + 20);
-                g2.dispose();
-                images.add(placeholder);
-            }
-        }
-        
-        private void createIndicators() {
-            // Cria o painel de indicadores na parte inferior
-            indicatorsPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 5));
-            indicatorsPanel.setOpaque(false);
-            
-            // Cria indicadores baseados na quantidade de imagens
-            for (int i = 0; i < images.size(); i++) {
-                JButton indicator = createIndicatorButton(i == currentIndex);
-                final int index = i;
-                indicator.addActionListener(e -> {
-                    currentIndex = index;
-                    updateIndicators();
-                    repaint();
-                });
-                indicatorsPanel.add(indicator);
-            }
-            
-            // Adiciona os indicadores ao carrossel
-            add(indicatorsPanel, BorderLayout.SOUTH);
-        }
-        
-        private JButton createIndicatorButton(boolean isActive) {
-            JButton button = new JButton();
-            button.setPreferredSize(new Dimension(12, 12));
-            button.setBackground(isActive ? Color.WHITE : new Color(255, 255, 255, 120));
-            button.setBorder(BorderFactory.createEmptyBorder());
-            button.setFocusPainted(false);
-            button.setCursor(new Cursor(Cursor.HAND_CURSOR));
-            
-            return button;
-        }
-        
-        private void nextImage() {
-            currentIndex = (currentIndex + 1) % images.size();
-            repaint();
-        }
-        
-        private void previousImage() {
-            currentIndex = (currentIndex - 1 + images.size()) % images.size();
-            repaint();
-        }
-        
-        private void updateIndicators() {
-            for (int i = 0; i < indicatorsPanel.getComponentCount(); i++) {
-                Component comp = indicatorsPanel.getComponent(i);
-                if (comp instanceof JButton) {
-                    ((JButton) comp).setBackground(i == currentIndex ? 
-                                                  Color.WHITE : new Color(255, 255, 255, 120));
-                }
-            }
-            indicatorsPanel.revalidate();
-            indicatorsPanel.repaint();
-        }
-        
-        @Override
-        protected void paintComponent(Graphics g) {
-            super.paintComponent(g);
-            if (!images.isEmpty()) {
-                Graphics2D g2 = (Graphics2D) g.create();
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-                
-                // Desenha a imagem atual
-                g2.drawImage(images.get(currentIndex), 0, 0, this);
-                
-                // Adiciona uma camada parcialmente transparente por cima para melhorar a legibilidade
-                g2.setColor(new Color(0, 0, 0, 80));
-                g2.fillRect(0, 0, getWidth(), getHeight());
-                
-                g2.dispose();
-            }
-        }
-    }
-    
-    // O restante do código permanece igual...
-    // Métodos createLoginPanel(), createRegisterPanel(), etc.
-
     private void createLoginPanel() {
         loginPanel = new JPanel(new GridBagLayout());
         loginPanel.setBackground(BRANCO);
@@ -297,14 +203,10 @@ public class LoginUI extends JFrame {
         gbc.insets = new Insets(5, 10, 5, 10);
         
         // Título com animação de digitação
-        JLabel titleLabel = new JLabel("");
+        JLabel titleLabel = new JLabel("Bem-vindo de volta!");
         titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 28));
         titleLabel.setForeground(CINZA_ESCURO);
         titleLabel.setHorizontalAlignment(SwingConstants.CENTER);
-        
-        // Anima o título como se estivesse digitando
-        String titleText = "Bem-vindo de volta!";
-        animateTypingText(titleLabel, titleText, 80);
         
         // Subtítulo
         JLabel subtitleLabel = new JLabel("Faça login na sua conta");
@@ -314,7 +216,12 @@ public class LoginUI extends JFrame {
         
         // Campos customizados
         JPanel emailPanel = createTextField("E-mail", "Seu e-mail", "email.png");
-        JPanel passwordPanel = createPasswordField("Senha", "Sua senha", "lock.png");
+        // Obter referência ao campo de texto para uso na lógica de login
+        emailLoginField = getTextFieldFromPanel(emailPanel);
+        
+        JPanel passwordPanel = createSimplePasswordField("Senha", "Sua senha", "lock.png");
+        // Obter referência ao campo de senha para uso na lógica de login
+        passwordLoginField = getPasswordFieldFromPanel(passwordPanel);
         
         // Link "Esqueci minha senha"
         JLabel forgotPasswordLabel = new JLabel("Esqueci minha senha");
@@ -334,13 +241,36 @@ public class LoginUI extends JFrame {
             public void mouseExited(MouseEvent e) {
                 forgotPasswordLabel.setText("Esqueci minha senha");
             }
+            
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                String email = JOptionPane.showInputDialog(LoginUI.this, 
+                    "Digite seu e-mail para redefinir a senha:", 
+                    "Recuperação de Senha", 
+                    JOptionPane.QUESTION_MESSAGE);
+                
+                if (email != null && !email.trim().isEmpty()) {
+                    // Verificar se o e-mail existe no CSV
+                    if (verificarEmailExistente(email)) {
+                        JOptionPane.showMessageDialog(LoginUI.this, 
+                            "Um link para redefinição de senha foi enviado para seu e-mail.",
+                            "Redefinição de Senha", 
+                            JOptionPane.INFORMATION_MESSAGE);
+                    } else {
+                        JOptionPane.showMessageDialog(LoginUI.this, 
+                            "E-mail não encontrado no sistema.",
+                            "Erro", 
+                            JOptionPane.ERROR_MESSAGE);
+                    }
+                }
+            }
         });
         
         // Botão de login customizado
         JButton loginButton = createAnimatedButton("Entrar", VERDE_PRINCIPAL, BRANCO);
         loginButton.addActionListener(e -> {
-            // Lógica de login aqui
-            JOptionPane.showMessageDialog(this, "Funcionalidade de login a ser implementada");
+            // Lógica de login
+            realizarLogin();
         });
         
         // Botão para alternar para o painel de registro
@@ -377,7 +307,7 @@ public class LoginUI extends JFrame {
         registerLinkPanel.add(switchToRegisterButton);
         
         // Adiciona os componentes ao painel de login
-        gbc.insets = new Insets(20, 10, 10, 10);
+        gbc.insets = new Insets(20, 10, 15, 10);
         loginPanel.add(titleLabel, gbc);
         
         gbc.insets = new Insets(0, 10, 25, 10);
@@ -402,7 +332,181 @@ public class LoginUI extends JFrame {
         loginPanel.add(registerLinkPanel, gbc);
         
         // Adiciona o painel de login ao cardPanel
-        cardPanel.add(loginPanel, Integer.valueOf(1));
+        cardPanel.add(loginPanel, "login");
+    }
+    
+    private JPanel createSimplePasswordField(String labelText, String placeholder, String iconName) {
+        JPanel panel = new JPanel(new BorderLayout(0, 5));
+        panel.setBackground(BRANCO);
+        
+        // Painel para o label com ícone
+        JPanel labelPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
+        labelPanel.setBackground(BRANCO);
+        
+        // Carrega o ícone do label
+        ImageIcon originalIcon = loadIcon("icons/" + iconName);
+        ImageIcon scaledIcon = null;
+        
+        if (originalIcon != null) {
+            // Redimensiona o ícone para um tamanho padrão (16x16 pixels)
+            Image image = originalIcon.getImage().getScaledInstance(16, 16, Image.SCALE_SMOOTH);
+            scaledIcon = new ImageIcon(image);
+        }
+        
+        // Cria o label com o ícone
+        JLabel iconLabel = new JLabel(scaledIcon);
+        JLabel textLabel = new JLabel(labelText);
+        textLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        textLabel.setForeground(CINZA_ESCURO);
+        
+        labelPanel.add(iconLabel);
+        labelPanel.add(textLabel);
+        
+        // Painel personalizado para o campo de senha com ícone interno
+        JPanel customPasswordPanel = new JPanel(new BorderLayout());
+        customPasswordPanel.setBackground(BRANCO);
+        
+        JPasswordField passwordField = new JPasswordField(20);
+        passwordField.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        passwordField.setBorder(BorderFactory.createEmptyBorder(8, 10, 8, 0));
+        passwordField.setText(placeholder);
+        passwordField.setForeground(new Color(180, 180, 180));
+        passwordField.setEchoChar((char) 0); // Desativa o echo char inicialmente
+        
+        // Cria o botão de toggle com o ícone de olho cruzado inicialmente
+        JButton toggleButton = new JButton(eyeCrossedIcon);
+        toggleButton.setBorderPainted(false);
+        toggleButton.setContentAreaFilled(false);
+        toggleButton.setFocusPainted(false);
+        toggleButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        toggleButton.setMargin(new Insets(0, 0, 0, 10));
+        toggleButton.setToolTipText("Mostrar/ocultar senha");
+        
+        // Estado atual (inicialmente senha oculta)
+        final boolean[] passwordVisible = {false};
+        
+        toggleButton.addActionListener(e -> {
+            if (String.valueOf(passwordField.getPassword()).equals(placeholder)) {
+                return; // Não fazer nada quando for o placeholder
+            }
+            
+            passwordVisible[0] = !passwordVisible[0];
+            
+            if (passwordVisible[0]) {
+                // Mostrar senha
+                passwordField.setEchoChar((char) 0);
+                toggleButton.setIcon(eyeIcon);
+            } else {
+                // Ocultar senha
+                passwordField.setEchoChar('•');
+                toggleButton.setIcon(eyeCrossedIcon);
+            }
+        });
+        
+        // Painel para o botão de toggle
+        JPanel toggleButtonPanel = new JPanel(new BorderLayout());
+        toggleButtonPanel.setBackground(BRANCO);
+        toggleButtonPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 5));
+        toggleButtonPanel.add(toggleButton);
+        
+        // Adiciona efeitos de foco
+        passwordField.addFocusListener(new FocusAdapter() {
+            @Override
+            public void focusGained(FocusEvent e) {
+                if (String.valueOf(passwordField.getPassword()).equals(placeholder)) {
+                    passwordField.setText("");
+                    passwordField.setEchoChar('•');
+                    passwordField.setForeground(CINZA_ESCURO);
+                    
+                    // Restaura o ícone de olho cruzado ao focar
+                    toggleButton.setIcon(eyeCrossedIcon);
+                    passwordVisible[0] = false;
+                }
+                
+                // Animação de foco
+                Timer focusTimer = new Timer(20, null);
+                focusTimer.addActionListener(new ActionListener() {
+                    int step = 0;
+                    final int steps = 10;
+                    
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        step++;
+                        float ratio = (float) step / steps;
+                        
+                        // Interpola as cores
+                        Color borderColor = interpolateColor(CINZA_CLARO, VERDE_PRINCIPAL, ratio);
+                        
+                        // Atualiza o painel customizado
+                        customPasswordPanel.setBorder(BorderFactory.createLineBorder(borderColor, 1 + (int)(ratio), true));
+                        
+                        if (step >= steps) {
+                            focusTimer.stop();
+                        }
+                    }
+                });
+                focusTimer.start();
+            }
+            
+            @Override
+            public void focusLost(FocusEvent e) {
+                if (String.valueOf(passwordField.getPassword()).isEmpty()) {
+                    passwordField.setText(placeholder);
+                    passwordField.setEchoChar((char) 0);
+                    passwordField.setForeground(new Color(180, 180, 180));
+                }
+                
+                // Animação de perda de foco
+                Timer blurTimer = new Timer(20, null);
+                blurTimer.addActionListener(new ActionListener() {
+                    int step = 0;
+                    final int steps = 10;
+                    
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        step++;
+                        float ratio = (float) step / steps;
+                        
+                        // Interpola as cores invertendo a ordem
+                        Color borderColor = interpolateColor(VERDE_PRINCIPAL, CINZA_CLARO, ratio);
+                        
+                        // Atualiza o painel customizado
+                        customPasswordPanel.setBorder(BorderFactory.createLineBorder(borderColor, 2 - (int)(ratio), true));
+                        
+                        if (step >= steps) {
+                            blurTimer.stop();
+                        }
+                    }
+                });
+                blurTimer.start();
+            }
+        });
+        
+        // Adicionar tecla ENTER para acionar login
+        passwordField.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyPressed(KeyEvent e) {
+                if (e.getKeyCode() == KeyEvent.VK_ENTER) {
+                    // Determinar se estamos no painel de login
+                    Container parent = panel.getParent();
+                    if (parent != null && parent == loginPanel) {
+                        // Estamos no painel de login
+                        realizarLogin();
+                    }
+                }
+            }
+        });
+        
+        // Combina o campo de senha e o botão no painel personalizado
+        customPasswordPanel.add(passwordField, BorderLayout.CENTER);
+        customPasswordPanel.add(toggleButtonPanel, BorderLayout.EAST);
+        customPasswordPanel.setBorder(BorderFactory.createLineBorder(CINZA_CLARO, 1, true));
+        
+        // Painel principal que contém tudo
+        panel.add(labelPanel, BorderLayout.NORTH);
+        panel.add(customPasswordPanel, BorderLayout.CENTER);
+        
+        return panel;
     }
     
     private void createRegisterPanel() {
@@ -418,7 +522,7 @@ public class LoginUI extends JFrame {
         gbc.insets = new Insets(5, 10, 5, 10);
         
         // Título com animação de digitação
-        JLabel titleLabel = new JLabel("");
+        JLabel titleLabel = new JLabel("Crie sua conta");
         titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 28));
         titleLabel.setForeground(CINZA_ESCURO);
         titleLabel.setHorizontalAlignment(SwingConstants.CENTER);
@@ -431,17 +535,22 @@ public class LoginUI extends JFrame {
         
         // Campos customizados - mantendo como estavam antes
         JPanel namePanel = createTextField("Nome completo", "Seu nome", "user.png");
+        nameRegisterField = getTextFieldFromPanel(namePanel);
+        
         JPanel emailPanel = createTextField("E-mail", "Seu e-mail", "email.png");
+        emailRegisterField = getTextFieldFromPanel(emailPanel);
+        
         JPanel passwordPanel = createPasswordFieldWithStrengthMeter("Senha", "Sua senha", "lock.png");
+        passwordRegisterField = getPasswordFieldFromPanel(passwordPanel);
         
         // Botão de registro customizado
         JButton registerButton = createAnimatedButton("Registrar", VERDE_PRINCIPAL, BRANCO);
         registerButton.addActionListener(e -> {
-            // Lógica de registro aqui
-            JOptionPane.showMessageDialog(this, "Funcionalidade de registro a ser implementada");
+            // Lógica de registro
+            realizarRegistro();
         });
         
-        // Adiciona os componentes ao painel de registro (como estavam antes)
+        // Adiciona os componentes ao painel de registro com espaçamento maior
         gbc.insets = new Insets(20, 10, 15, 10);
         registerPanel.add(titleLabel, gbc);
         
@@ -490,260 +599,256 @@ public class LoginUI extends JFrame {
         registerPanel.add(backToLoginLabel, gbc);
         
         // Adiciona o painel de registro ao cardPanel
-        cardPanel.add(registerPanel, Integer.valueOf(0));
-    }
-
-private JPanel createPasswordFieldWithStrengthMeter(String labelText, String placeholder, String iconName) {
-    JPanel panel = new JPanel(new BorderLayout(0, 5));
-    panel.setBackground(BRANCO);
-    
-    // Painel para o label com ícone
-    JPanel labelPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
-    labelPanel.setBackground(BRANCO);
-    
-    // Carrega o ícone
-    ImageIcon originalIcon = loadIcon("icons/" + iconName);
-    ImageIcon scaledIcon = null;
-    
-    if (originalIcon != null) {
-        // Redimensiona o ícone para um tamanho padrão (16x16 pixels)
-        Image image = originalIcon.getImage().getScaledInstance(16, 16, Image.SCALE_SMOOTH);
-        scaledIcon = new ImageIcon(image);
+        cardPanel.add(registerPanel, "register");
     }
     
-    // Cria o label com o ícone
-    JLabel iconLabel = new JLabel(scaledIcon);
-    JLabel textLabel = new JLabel(labelText);
-    textLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
-    textLabel.setForeground(CINZA_ESCURO);
-    
-    labelPanel.add(iconLabel);
-    labelPanel.add(textLabel);
-    
-    JPasswordField passwordField = new JPasswordField(20);
-    passwordField.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-    passwordField.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(CINZA_CLARO, 1, true),
-            BorderFactory.createEmptyBorder(8, 10, 8, 10)));
-    passwordField.setText(placeholder);
-    passwordField.setForeground(new Color(180, 180, 180));
-    passwordField.setEchoChar((char) 0); // Desativa o echo char inicialmente
-    
-    // Indicador de força da senha
-    JPanel strengthPanel = new JPanel(new BorderLayout(5, 0));
-    strengthPanel.setBackground(BRANCO);
-    
-    JProgressBar strengthMeter = new JProgressBar(0, 100);
-    strengthMeter.setValue(0);
-    strengthMeter.setStringPainted(true);
-    strengthMeter.setString("Força da senha");
-    strengthMeter.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-    strengthMeter.setForeground(CINZA_ESCURO);
-    
-    JLabel strengthLabel = new JLabel("Digite sua senha");
-    strengthLabel.setFont(new Font("Segoe UI", Font.PLAIN, 11));
-    strengthLabel.setForeground(CINZA_ESCURO);
-    
-    strengthPanel.add(strengthMeter, BorderLayout.CENTER);
-    strengthPanel.add(strengthLabel, BorderLayout.EAST);
-    
-    // Adiciona botão para mostrar/ocultar senha
-    JButton toggleButton = new JButton("\uD83D\uDC41️"); // Emoji de olho
-    toggleButton.setFont(new Font("Segoe UI", Font.PLAIN, 16));
-    toggleButton.setBorderPainted(false);
-    toggleButton.setContentAreaFilled(false);
-    toggleButton.setFocusPainted(false);
-    toggleButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
-    
-    // Adiciona tooltip
-    toggleButton.setToolTipText("Mostrar/ocultar senha");
-    
-    toggleButton.addActionListener(e -> {
-        if (passwordField.getEchoChar() == 0 && !String.valueOf(passwordField.getPassword()).equals(placeholder)) {
-            passwordField.setEchoChar('•');
-            toggleButton.setText("\uD83D\uDC41️\u200D\uD83D\uDDE8"); // Olho riscado
-        } else {
-            passwordField.setEchoChar((char) 0);
-            toggleButton.setText("\uD83D\uDC41️");
-        }
-    });
-    
-    // Adiciona listener para validar a força da senha durante a digitação
-    passwordField.getDocument().addDocumentListener(new DocumentListener() {
-        @Override
-        public void insertUpdate(DocumentEvent e) {
-            updatePasswordStrength();
+    private JPanel createPasswordFieldWithStrengthMeter(String labelText, String placeholder, String iconName) {
+        JPanel panel = new JPanel(new BorderLayout(0, 5));
+        panel.setBackground(BRANCO);
+        
+        // Painel para o label com ícone
+        JPanel labelPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
+        labelPanel.setBackground(BRANCO);
+        
+        // Carrega o ícone do label
+        ImageIcon originalIcon = loadIcon("icons/" + iconName);
+        ImageIcon scaledIcon = null;
+        
+        if (originalIcon != null) {
+            // Redimensiona o ícone para um tamanho padrão (16x16 pixels)
+            Image image = originalIcon.getImage().getScaledInstance(16, 16, Image.SCALE_SMOOTH);
+            scaledIcon = new ImageIcon(image);
         }
         
-        @Override
-        public void removeUpdate(DocumentEvent e) {
-            updatePasswordStrength();
-        }
+        // Cria o label com o ícone
+        JLabel iconLabel = new JLabel(scaledIcon);
+        JLabel textLabel = new JLabel(labelText);
+        textLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        textLabel.setForeground(CINZA_ESCURO);
         
-        @Override
-        public void changedUpdate(DocumentEvent e) {
-            updatePasswordStrength();
-        }
+        labelPanel.add(iconLabel);
+        labelPanel.add(textLabel);
         
-        private void updatePasswordStrength() {
-            String password = String.valueOf(passwordField.getPassword());
-            
-            // Não analisa quando está vazio ou com o placeholder
-            if (password.isEmpty() || password.equals(placeholder)) {
-                strengthMeter.setValue(0);
-                strengthMeter.setString("Força da senha");
-                strengthMeter.setForeground(CINZA_CLARO);
-                strengthLabel.setText("Digite sua senha");
-                return;
-            }
-            
-            // Calcula a força da senha
-            int strength = calculatePasswordStrength(password);
-            strengthMeter.setValue(strength);
-            
-            // Define cor e texto com base na força
-            if (strength < 30) {
-                strengthMeter.setForeground(Color.RED);
-                strengthMeter.setString("Fraca");
-                strengthLabel.setText("Senha muito fraca");
-                strengthLabel.setForeground(Color.RED);
-            } else if (strength < 60) {
-                strengthMeter.setForeground(Color.ORANGE);
-                strengthMeter.setString("Média");
-                strengthLabel.setText("Adicione mais caracteres");
-                strengthLabel.setForeground(Color.ORANGE);
-            } else if (strength < 80) {
-                strengthMeter.setForeground(Color.YELLOW.darker());
-                strengthMeter.setString("Boa");
-                strengthLabel.setText("Senha aceitável");
-                strengthLabel.setForeground(Color.YELLOW.darker());
-            } else {
-                strengthMeter.setForeground(VERDE_PRINCIPAL);
-                strengthMeter.setString("Forte");
-                strengthLabel.setText("Senha forte");
-                strengthLabel.setForeground(VERDE_PRINCIPAL);
-            }
-        }
+        // Painel personalizado para o campo de senha com ícone interno
+        JPanel customPasswordPanel = new JPanel(new BorderLayout());
+        customPasswordPanel.setBackground(BRANCO);
         
-        private int calculatePasswordStrength(String password) {
-            int strength = 0;
-            
-            // Comprimento (até 40 pontos)
-            int length = password.length();
-            strength += Math.min(40, length * 4);
-            
-            // Variedade de caracteres (até 30 pontos)
-            boolean hasLowercase = false;
-            boolean hasUppercase = false;
-            boolean hasDigit = false;
-            boolean hasSpecial = false;
-            
-            for (char c : password.toCharArray()) {
-                if (Character.isLowerCase(c)) hasLowercase = true;
-                else if (Character.isUpperCase(c)) hasUppercase = true;
-                else if (Character.isDigit(c)) hasDigit = true;
-                else hasSpecial = true;
-            }
-            
-            int typesCount = 0;
-            if (hasLowercase) typesCount++;
-            if (hasUppercase) typesCount++;
-            if (hasDigit) typesCount++;
-            if (hasSpecial) typesCount++;
-            
-            strength += typesCount * 10;
-            
-            // Complexidade adicional (até 30 pontos)
-            if (length > 8 && typesCount >= 3) strength += 10;
-            if (length > 12 && typesCount == 4) strength += 20;
-            
-            return Math.min(100, strength);
-        }
-    });
-    
-    // Adiciona efeitos de foco com animação
-    passwordField.addFocusListener(new FocusAdapter() {
-        @Override
-        public void focusGained(FocusEvent e) {
+        JPasswordField passwordField = new JPasswordField(20);
+        passwordField.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        passwordField.setBorder(BorderFactory.createEmptyBorder(8, 10, 8, 0));
+        passwordField.setText(placeholder);
+        passwordField.setForeground(new Color(180, 180, 180));
+        passwordField.setEchoChar((char) 0); // Desativa o echo char inicialmente
+        
+        // Cria o botão de toggle com o ícone de olho cruzado inicialmente
+        JButton toggleButton = new JButton(eyeCrossedIcon);
+        toggleButton.setBorderPainted(false);
+        toggleButton.setContentAreaFilled(false);
+        toggleButton.setFocusPainted(false);
+        toggleButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        toggleButton.setMargin(new Insets(0, 0, 0, 10));
+        toggleButton.setToolTipText("Mostrar/ocultar senha");
+        
+        // Estado atual (inicialmente senha oculta)
+        final boolean[] passwordVisible = {false};
+        
+        toggleButton.addActionListener(e -> {
             if (String.valueOf(passwordField.getPassword()).equals(placeholder)) {
-                passwordField.setText("");
-                passwordField.setEchoChar('•');
-                passwordField.setForeground(CINZA_ESCURO);
+                return; // Não fazer nada quando for o placeholder
             }
             
-            // Animação de foco
-            Timer focusTimer = new Timer(20, null);
-            focusTimer.addActionListener(new ActionListener() {
-                int step = 0;
-                final int steps = 10;
-                
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    step++;
-                    float ratio = (float) step / steps;
-                    
-                    // Interpola as cores
-                    Color borderColor = interpolateColor(CINZA_CLARO, VERDE_PRINCIPAL, ratio);
-                    
-                    passwordField.setBorder(BorderFactory.createCompoundBorder(
-                            BorderFactory.createLineBorder(borderColor, 1 + (int)(ratio), true),
-                            BorderFactory.createEmptyBorder(8, 10, 8, 10)));
-                    
-                    if (step >= steps) {
-                        focusTimer.stop();
-                    }
-                }
-            });
-            focusTimer.start();
-        }
-        
-        @Override
-        public void focusLost(FocusEvent e) {
-            if (String.valueOf(passwordField.getPassword()).isEmpty()) {
-                passwordField.setText(placeholder);
+            passwordVisible[0] = !passwordVisible[0];
+            
+            if (passwordVisible[0]) {
+                // Mostrar senha
                 passwordField.setEchoChar((char) 0);
-                passwordField.setForeground(new Color(180, 180, 180));
+                toggleButton.setIcon(eyeIcon);
+            } else {
+                // Ocultar senha
+                passwordField.setEchoChar('•');
+                toggleButton.setIcon(eyeCrossedIcon);
+            }
+        });
+        
+        // Painel para o botão de toggle
+        JPanel toggleButtonPanel = new JPanel(new BorderLayout());
+        toggleButtonPanel.setBackground(BRANCO);
+        toggleButtonPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 5));
+        toggleButtonPanel.add(toggleButton);
+        
+        // Indicador de força da senha
+        JPanel strengthPanel = new JPanel(new BorderLayout(5, 0));
+        strengthPanel.setBackground(BRANCO);
+        
+        JProgressBar strengthMeter = new JProgressBar(0, 100);
+        strengthMeter.setValue(0);
+        strengthMeter.setStringPainted(true);
+        strengthMeter.setString("Força da senha");
+        strengthMeter.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        strengthMeter.setForeground(CINZA_ESCURO);
+        
+        JLabel strengthLabel = new JLabel("Digite sua senha");
+        strengthLabel.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        strengthLabel.setForeground(CINZA_ESCURO);
+        
+        strengthPanel.add(strengthMeter, BorderLayout.CENTER);
+        strengthPanel.add(strengthLabel, BorderLayout.EAST);
+        
+        // Adiciona listener para validar a força da senha durante a digitação
+        passwordField.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                updatePasswordStrength();
             }
             
-            // Animação de perda de foco
-            Timer blurTimer = new Timer(20, null);
-            blurTimer.addActionListener(new ActionListener() {
-                int step = 0;
-                final int steps = 10;
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                updatePasswordStrength();
+            }
+            
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+                updatePasswordStrength();
+            }
+            
+            private void updatePasswordStrength() {
+                String password = String.valueOf(passwordField.getPassword());
                 
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    step++;
-                    float ratio = (float) step / steps;
-                    
-                    // Interpola as cores invertendo a ordem
-                    Color borderColor = interpolateColor(VERDE_PRINCIPAL, CINZA_CLARO, ratio);
-                    
-                    passwordField.setBorder(BorderFactory.createCompoundBorder(
-                            BorderFactory.createLineBorder(borderColor, 2 - (int)(ratio), true),
-                            BorderFactory.createEmptyBorder(8, 10, 8, 10)));
-                    
-                    if (step >= steps) {
-                        blurTimer.stop();
-                    }
+                // Não analisa quando está vazio ou com o placeholder
+                if (password.isEmpty() || password.equals(placeholder)) {
+                    strengthMeter.setValue(0);
+                    strengthMeter.setString("Força da senha");
+                    strengthMeter.setForeground(CINZA_CLARO);
+                    strengthLabel.setText("Digite sua senha");
+                    return;
                 }
-            });
-            blurTimer.start();
-        }
-    });
-    
-    JPanel fieldPanel = new JPanel(new BorderLayout());
-    fieldPanel.setBackground(BRANCO);
-    fieldPanel.add(passwordField, BorderLayout.CENTER);
-    fieldPanel.add(toggleButton, BorderLayout.EAST);
-    
-    // Painel principal que contém tudo
-    panel.add(labelPanel, BorderLayout.NORTH);
-    panel.add(fieldPanel, BorderLayout.CENTER);
-    panel.add(strengthPanel, BorderLayout.SOUTH);
-    
-    return panel;
-}
+                
+                // Calcula a força da senha
+                int strength = calculatePasswordStrength(password);
+                strengthMeter.setValue(strength);
+                
+                // Define cor e texto com base na força
+                if (strength < 30) {
+                    strengthMeter.setForeground(Color.RED);
+                    strengthMeter.setString("Fraca");
+                    strengthLabel.setText("Senha muito fraca");
+                    strengthLabel.setForeground(Color.RED);
+                } else if (strength < 60) {
+                    strengthMeter.setForeground(Color.ORANGE);
+                    strengthMeter.setString("Média");
+                    strengthLabel.setText("Adicione mais caracteres");
+                    strengthLabel.setForeground(Color.ORANGE);
+                } else if (strength < 80) {
+                    strengthMeter.setForeground(Color.YELLOW.darker());
+                    strengthMeter.setString("Boa");
+                    strengthLabel.setText("Senha aceitável");
+                    strengthLabel.setForeground(Color.YELLOW.darker());
+                } else {
+                    strengthMeter.setForeground(VERDE_PRINCIPAL);
+                    strengthMeter.setString("Forte");
+                    strengthLabel.setText("Senha forte");
+                    strengthLabel.setForeground(VERDE_PRINCIPAL);
+                }
+            }
+        });
+        
+        // Adiciona efeitos de foco
+        passwordField.addFocusListener(new FocusAdapter() {
+            @Override
+            public void focusGained(FocusEvent e) {
+                if (String.valueOf(passwordField.getPassword()).equals(placeholder)) {
+                    passwordField.setText("");
+                    passwordField.setEchoChar('•');
+                    passwordField.setForeground(CINZA_ESCURO);
+                    
+                    // Restaura o ícone de olho cruzado ao focar
+                    toggleButton.setIcon(eyeCrossedIcon);
+                    passwordVisible[0] = false;
+                }
+                
+                // Animação de foco
+                Timer focusTimer = new Timer(20, null);
+                focusTimer.addActionListener(new ActionListener() {
+                    int step = 0;
+                    final int steps = 10;
+                    
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        step++;
+                        float ratio = (float) step / steps;
+                        
+                        // Interpola as cores
+                        Color borderColor = interpolateColor(CINZA_CLARO, VERDE_PRINCIPAL, ratio);
+                        
+                        // Atualiza o painel customizado
+                        customPasswordPanel.setBorder(BorderFactory.createLineBorder(borderColor, 1 + (int)(ratio), true));
+                        
+                        if (step >= steps) {
+                            focusTimer.stop();
+                        }
+                    }
+                });
+                focusTimer.start();
+            }
+            
+            @Override
+            public void focusLost(FocusEvent e) {
+                if (String.valueOf(passwordField.getPassword()).isEmpty()) {
+                    passwordField.setText(placeholder);
+                    passwordField.setEchoChar((char) 0);
+                    passwordField.setForeground(new Color(180, 180, 180));
+                }
+                
+                // Animação de perda de foco
+                Timer blurTimer = new Timer(20, null);
+                blurTimer.addActionListener(new ActionListener() {
+                    int step = 0;
+                    final int steps = 10;
+                    
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        step++;
+                        float ratio = (float) step / steps;
+                        
+                        // Interpola as cores invertendo a ordem
+                        Color borderColor = interpolateColor(VERDE_PRINCIPAL, CINZA_CLARO, ratio);
+                        
+                        // Atualiza o painel customizado
+                        customPasswordPanel.setBorder(BorderFactory.createLineBorder(borderColor, 2 - (int)(ratio), true));
+                        
+                        if (step >= steps) {
+                            blurTimer.stop();
+                        }
+                    }
+                });
+                blurTimer.start();
+            }
+        });
+        
+        // Adicionar tecla ENTER para acionar o registro
+        passwordField.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyPressed(KeyEvent e) {
+                if (e.getKeyCode() == KeyEvent.VK_ENTER) {
+                    // Como este é o campo de senha com medidor de força, 
+                    // ele só existe no painel de registro
+                    realizarRegistro();
+                }
+            }
+        });
+        
+        // Combina o campo de senha e o botão no painel personalizado
+        customPasswordPanel.add(passwordField, BorderLayout.CENTER);
+        customPasswordPanel.add(toggleButtonPanel, BorderLayout.EAST);
+        customPasswordPanel.setBorder(BorderFactory.createLineBorder(CINZA_CLARO, 1, true));
+        
+        // Painel principal que contém tudo
+        panel.add(labelPanel, BorderLayout.NORTH);
+        panel.add(customPasswordPanel, BorderLayout.CENTER);
+        panel.add(strengthPanel, BorderLayout.SOUTH);
+        
+        return panel;
+    }
     
     private JPanel createTextField(String labelText, String placeholder, String iconName) {
         JPanel panel = new JPanel(new BorderLayout(0, 5));
@@ -784,363 +889,101 @@ private JPanel createPasswordFieldWithStrengthMeter(String labelText, String pla
         textField.addFocusListener(new FocusAdapter() {
             @Override
             public void focusGained(FocusEvent e) {
-                // Animação suave de troca de borda
-                animateTextFieldFocus(textField, placeholder, true);
+                if (textField.getText().equals(placeholder)) {
+                    textField.setText("");
+                    textField.setForeground(CINZA_ESCURO);
+                }
+                
+                // Animação de foco
+                Timer focusTimer = new Timer(20, null);
+                focusTimer.addActionListener(new ActionListener() {
+                    int step = 0;
+                    final int steps = 10;
+                    
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        step++;
+                        float ratio = (float) step / steps;
+                        
+                        // Interpola as cores
+                        Color borderColor = interpolateColor(CINZA_CLARO, VERDE_PRINCIPAL, ratio);
+                        
+                        textField.setBorder(BorderFactory.createCompoundBorder(
+                                BorderFactory.createLineBorder(borderColor, 1 + (int)(ratio), true),
+                                BorderFactory.createEmptyBorder(8, 10, 8, 10)));
+                        
+                        if (step >= steps) {
+                            focusTimer.stop();
+                        }
+                    }
+                });
+                focusTimer.start();
             }
             
             @Override
             public void focusLost(FocusEvent e) {
-                // Animação suave de retorno
-                animateTextFieldFocus(textField, placeholder, false);
+                if (textField.getText().isEmpty()) {
+                    textField.setText(placeholder);
+                    textField.setForeground(new Color(180, 180, 180));
+                }
+                
+                // Animação de perda de foco
+                Timer blurTimer = new Timer(20, null);
+                blurTimer.addActionListener(new ActionListener() {
+                    int step = 0;
+                    final int steps = 10;
+                    
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        step++;
+                        float ratio = (float) step / steps;
+                        
+                        // Interpola as cores invertendo a ordem
+                        Color borderColor = interpolateColor(VERDE_PRINCIPAL, CINZA_CLARO, ratio);
+                        
+                        textField.setBorder(BorderFactory.createCompoundBorder(
+                                BorderFactory.createLineBorder(borderColor, 2 - (int)(ratio), true),
+                                BorderFactory.createEmptyBorder(8, 10, 8, 10)));
+                        
+                        if (step >= steps) {
+                            blurTimer.stop();
+                        }
+                    }
+                });
+                blurTimer.start();
+            }
+        });
+        
+        // Adicionar tecla ENTER para avançar para o próximo campo ou acionar botão
+        textField.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyPressed(KeyEvent e) {
+                if (e.getKeyCode() == KeyEvent.VK_ENTER) {
+                    // Próximo componente ou ação de botão
+                    KeyboardFocusManager.getCurrentKeyboardFocusManager().focusNextComponent();
+                    
+                    // Se for o último campo, aciona o botão de login/registro
+                    Container parent = panel.getParent();
+                    if (parent != null) {
+                        if (parent == loginPanel && labelText.equals("E-mail")) {
+                            // Vai para o campo de senha
+                            passwordLoginField.requestFocus();
+                        } else if (parent == registerPanel) {
+                            if (labelText.equals("Nome completo")) {
+                                // Vai para o campo de e-mail
+                                emailRegisterField.requestFocus();
+                            } else if (labelText.equals("E-mail")) {
+                                // Vai para o campo de senha
+                                passwordRegisterField.requestFocus();
+                            }
+                        }
+                    }
+                }
             }
         });
         
         panel.add(labelPanel, BorderLayout.NORTH);
         panel.add(textField, BorderLayout.CENTER);
-        
-        return panel;
-    }
-    
-    private JPanel createPasswordField(String labelText, String placeholder, String iconName) {
-        JPanel panel = new JPanel(new BorderLayout(0, 5));
-        panel.setBackground(BRANCO);
-        
-        // Painel para o label com ícone
-        JPanel labelPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
-        labelPanel.setBackground(BRANCO);
-        
-        // Carrega o ícone
-        ImageIcon originalIcon = loadIcon("icons/" + iconName);
-        ImageIcon scaledIcon = null;
-        
-        if (originalIcon != null) {
-            // Redimensiona o ícone para um tamanho padrão (16x16 pixels)
-            Image image = originalIcon.getImage().getScaledInstance(16, 16, Image.SCALE_SMOOTH);
-            scaledIcon = new ImageIcon(image);
-        }
-        
-        // Cria o label com o ícone
-        JLabel iconLabel = new JLabel(scaledIcon);
-        JLabel textLabel = new JLabel(labelText);
-        textLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        textLabel.setForeground(CINZA_ESCURO);
-        
-        labelPanel.add(iconLabel);
-        labelPanel.add(textLabel);
-        
-        JPasswordField passwordField = new JPasswordField(20);
-        passwordField.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        passwordField.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(CINZA_CLARO, 1, true),
-                BorderFactory.createEmptyBorder(8, 10, 8, 10)));
-        passwordField.setText(placeholder);
-        passwordField.setForeground(new Color(180, 180, 180));
-        passwordField.setEchoChar((char) 0); // Desativa o echo char inicialmente
-        
-        // Adiciona botão para mostrar/ocultar senha com animação
-        JButton toggleButton = new JButton("\uD83D\uDC41️"); // Emoji de olho
-        toggleButton.setFont(new Font("Segoe UI", Font.PLAIN, 16));
-        toggleButton.setBorderPainted(false);
-        toggleButton.setContentAreaFilled(false);
-        toggleButton.setFocusPainted(false);
-        toggleButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        
-        // Adiciona tooltip
-        toggleButton.setToolTipText("Mostrar/ocultar senha");
-        
-        toggleButton.addActionListener(e -> {
-            if (passwordField.getEchoChar() == 0 && !String.valueOf(passwordField.getPassword()).equals(placeholder)) {
-                passwordField.setEchoChar('•');
-                toggleButton.setText("\uD83D\uDC41️\u200D\uD83D\uDDE8"); // Olho riscado
-            } else {
-                passwordField.setEchoChar((char) 0);
-                toggleButton.setText("\uD83D\uDC41️");
-            }
-        });
-        
-        // Adiciona efeitos de foco com animação (código existente para isso)
-        passwordField.addFocusListener(new FocusAdapter() {
-            // Mantém o mesmo código que você tinha antes
-            @Override
-            public void focusGained(FocusEvent e) {
-                if (String.valueOf(passwordField.getPassword()).equals(placeholder)) {
-                    passwordField.setText("");
-                    passwordField.setEchoChar('•');
-                    passwordField.setForeground(CINZA_ESCURO);
-                }
-                
-                // Animação de foco
-                Timer focusTimer = new Timer(20, null);
-                focusTimer.addActionListener(new ActionListener() {
-                    int step = 0;
-                    final int steps = 10;
-                    
-                    @Override
-                    public void actionPerformed(ActionEvent e) {
-                        step++;
-                        float ratio = (float) step / steps;
-                        
-                        // Interpola as cores
-                        Color borderColor = interpolateColor(CINZA_CLARO, VERDE_PRINCIPAL, ratio);
-                        
-                        passwordField.setBorder(BorderFactory.createCompoundBorder(
-                                BorderFactory.createLineBorder(borderColor, 1 + (int)(ratio), true),
-                                BorderFactory.createEmptyBorder(8, 10, 8, 10)));
-                        
-                        if (step >= steps) {
-                            focusTimer.stop();
-                        }
-                    }
-                });
-                focusTimer.start();
-            }
-            
-            @Override
-            public void focusLost(FocusEvent e) {
-                if (String.valueOf(passwordField.getPassword()).isEmpty()) {
-                    passwordField.setText(placeholder);
-                    passwordField.setEchoChar((char) 0);
-                    passwordField.setForeground(new Color(180, 180, 180));
-                }
-                
-                // Animação de perda de foco
-                Timer blurTimer = new Timer(20, null);
-                blurTimer.addActionListener(new ActionListener() {
-                    int step = 0;
-                    final int steps = 10;
-                    
-                    @Override
-                    public void actionPerformed(ActionEvent e) {
-                        step++;
-                        float ratio = (float) step / steps;
-                        
-                        // Interpola as cores invertendo a ordem
-                        Color borderColor = interpolateColor(VERDE_PRINCIPAL, CINZA_CLARO, ratio);
-                        
-                        passwordField.setBorder(BorderFactory.createCompoundBorder(
-                                BorderFactory.createLineBorder(borderColor, 2 - (int)(ratio), true),
-                                BorderFactory.createEmptyBorder(8, 10, 8, 10)));
-                        
-                        if (step >= steps) {
-                            blurTimer.stop();
-                        }
-                    }
-                });
-                blurTimer.start();
-            }
-        });
-        
-        JPanel fieldPanel = new JPanel(new BorderLayout());
-        fieldPanel.setBackground(BRANCO);
-        fieldPanel.add(passwordField, BorderLayout.CENTER);
-        fieldPanel.add(toggleButton, BorderLayout.EAST);
-        
-        panel.add(labelPanel, BorderLayout.NORTH);
-        panel.add(fieldPanel, BorderLayout.CENTER);
-        
-        return panel;
-    }
-    
-    // Método auxiliar para carregar ícones
-    private ImageIcon loadIcon(String path) {
-        try {
-            String fullPath = "C:\\Users\\joaog\\Documents\\Programas\\Espaço Capital - Coworking System\\demo\\src\\main\\resources\\" + path;
-            return new ImageIcon(ImageIO.read(new File(fullPath)));
-        } catch (IOException e) {
-            System.err.println("Erro ao carregar ícone: " + path);
-            e.printStackTrace();
-            return null;
-        }
-    }
-    
-    
-    private void animateTextFieldFocus(JTextField textField, String placeholder, boolean gaining) {
-        if (gaining) {
-            if (textField.getText().equals(placeholder)) {
-                textField.setText("");
-                textField.setForeground(CINZA_ESCURO);
-            }
-            
-            // Animação de foco
-            Timer focusTimer = new Timer(20, null);
-            focusTimer.addActionListener(new ActionListener() {
-                int step = 0;
-                final int steps = 10;
-                
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    step++;
-                    float ratio = (float) step / steps;
-                    
-                    // Interpola as cores
-                    Color borderColor = interpolateColor(CINZA_CLARO, VERDE_PRINCIPAL, ratio);
-                    
-                    textField.setBorder(BorderFactory.createCompoundBorder(
-                            BorderFactory.createLineBorder(borderColor, 1 + (int)(ratio), true),
-                            BorderFactory.createEmptyBorder(8, 10, 8, 10)));
-                    
-                    if (step >= steps) {
-                        focusTimer.stop();
-                    }
-                }
-            });
-            focusTimer.start();
-        } else {
-            if (textField.getText().isEmpty()) {
-                textField.setText(placeholder);
-                textField.setForeground(new Color(180, 180, 180));
-            }
-            
-            // Animação de perda de foco
-            Timer blurTimer = new Timer(20, null);
-            blurTimer.addActionListener(new ActionListener() {
-                int step = 0;
-                final int steps = 10;
-                
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    step++;
-                    float ratio = (float) step / steps;
-                    
-                    // Interpola as cores invertendo a ordem
-                    Color borderColor = interpolateColor(VERDE_PRINCIPAL, CINZA_CLARO, ratio);
-                    
-                    textField.setBorder(BorderFactory.createCompoundBorder(
-                            BorderFactory.createLineBorder(borderColor, 2 - (int)(ratio), true),
-                            BorderFactory.createEmptyBorder(8, 10, 8, 10)));
-                    
-                    if (step >= steps) {
-                        blurTimer.stop();
-                    }
-                }
-            });
-            blurTimer.start();
-        }
-    }
-    
-    private Color interpolateColor(Color c1, Color c2, float ratio) {
-        int red = (int) (c1.getRed() * (1 - ratio) + c2.getRed() * ratio);
-        int green = (int) (c1.getGreen() * (1 - ratio) + c2.getGreen() * ratio);
-        int blue = (int) (c1.getBlue() * (1 - ratio) + c2.getBlue() * ratio);
-        return new Color(red, green, blue);
-    }
-    
-    private JPanel createPasswordField(String labelText, String placeholder) {
-        JPanel panel = new JPanel(new BorderLayout(0, 5));
-        panel.setBackground(BRANCO);
-        
-        JLabel label = new JLabel(labelText);
-        label.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        label.setForeground(CINZA_ESCURO);
-        
-        JPasswordField passwordField = new JPasswordField(20);
-        passwordField.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        passwordField.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(CINZA_CLARO, 1, true),
-                BorderFactory.createEmptyBorder(8, 10, 8, 10)));
-        passwordField.setText(placeholder);
-        passwordField.setForeground(new Color(180, 180, 180));
-        passwordField.setEchoChar((char) 0); // Desativa o echo char inicialmente
-        
-        // Adiciona botão para mostrar/ocultar senha com animação
-        JButton toggleButton = new JButton("\uD83D\uDC41️"); // Emoji de olho
-        toggleButton.setFont(new Font("Segoe UI", Font.PLAIN, 16));
-        toggleButton.setBorderPainted(false);
-        toggleButton.setContentAreaFilled(false);
-        toggleButton.setFocusPainted(false);
-        toggleButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        
-        // Adiciona tooltip
-        toggleButton.setToolTipText("Mostrar/ocultar senha");
-        
-        toggleButton.addActionListener(e -> {
-            if (passwordField.getEchoChar() == 0 && !String.valueOf(passwordField.getPassword()).equals(placeholder)) {
-                passwordField.setEchoChar('•');
-                toggleButton.setText("\uD83D\uDC41️\u200D\uD83D\uDDE8"); // Olho riscado
-            } else {
-                passwordField.setEchoChar((char) 0);
-                toggleButton.setText("\uD83D\uDC41️");
-            }
-        });
-        
-        // Adiciona efeitos de foco com animação
-        passwordField.addFocusListener(new FocusAdapter() {
-            @Override
-            public void focusGained(FocusEvent e) {
-                if (String.valueOf(passwordField.getPassword()).equals(placeholder)) {
-                    passwordField.setText("");
-                    passwordField.setEchoChar('•');
-                    passwordField.setForeground(CINZA_ESCURO);
-                }
-                
-                // Animação de foco
-                Timer focusTimer = new Timer(20, null);
-                focusTimer.addActionListener(new ActionListener() {
-                    int step = 0;
-                    final int steps = 10;
-                    
-                    @Override
-                    public void actionPerformed(ActionEvent e) {
-                        step++;
-                        float ratio = (float) step / steps;
-                        
-                        // Interpola as cores
-                        Color borderColor = interpolateColor(CINZA_CLARO, VERDE_PRINCIPAL, ratio);
-                        
-                        passwordField.setBorder(BorderFactory.createCompoundBorder(
-                                BorderFactory.createLineBorder(borderColor, 1 + (int)(ratio), true),
-                                BorderFactory.createEmptyBorder(8, 10, 8, 10)));
-                        
-                        if (step >= steps) {
-                            focusTimer.stop();
-                        }
-                    }
-                });
-                focusTimer.start();
-            }
-            
-            @Override
-            public void focusLost(FocusEvent e) {
-                if (String.valueOf(passwordField.getPassword()).isEmpty()) {
-                    passwordField.setText(placeholder);
-                    passwordField.setEchoChar((char) 0);
-                    passwordField.setForeground(new Color(180, 180, 180));
-                }
-                
-                // Animação de perda de foco
-                Timer blurTimer = new Timer(20, null);
-                blurTimer.addActionListener(new ActionListener() {
-                    int step = 0;
-                    final int steps = 10;
-                    
-                    @Override
-                    public void actionPerformed(ActionEvent e) {
-                        step++;
-                        float ratio = (float) step / steps;
-                        
-                        // Interpola as cores invertendo a ordem
-                        Color borderColor = interpolateColor(VERDE_PRINCIPAL, CINZA_CLARO, ratio);
-                        
-                        passwordField.setBorder(BorderFactory.createCompoundBorder(
-                                BorderFactory.createLineBorder(borderColor, 2 - (int)(ratio), true),
-                                BorderFactory.createEmptyBorder(8, 10, 8, 10)));
-                        
-                        if (step >= steps) {
-                            blurTimer.stop();
-                        }
-                    }
-                });
-                blurTimer.start();
-            }
-        });
-        
-        JPanel fieldPanel = new JPanel(new BorderLayout());
-        fieldPanel.setBackground(BRANCO);
-        fieldPanel.add(passwordField, BorderLayout.CENTER);
-        fieldPanel.add(toggleButton, BorderLayout.EAST);
-        
-        panel.add(label, BorderLayout.NORTH);
-        panel.add(fieldPanel, BorderLayout.CENTER);
         
         return panel;
     }
@@ -1152,7 +995,6 @@ private JPanel createPasswordFieldWithStrengthMeter(String labelText, String pla
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                 
-                // Desenha background do botão com efeitos
                 if (getModel().isPressed()) {
                     // Pressionado - cor mais escura e efeito de sombra interna
                     g2.setColor(bgColor.darker());
@@ -1206,7 +1048,7 @@ private JPanel createPasswordFieldWithStrengthMeter(String labelText, String pla
                         // Crescer
                         growing = true;
                         button.setBorder(BorderFactory.createEmptyBorder(10 + (steps * 2 - step), 25 - (steps * 2 - step), 
-                                                                         10 + (steps * 2 - step), 25 - (steps * 2 - step)));
+                                                                       10 + (steps * 2 - step), 25 - (steps * 2 - step)));
                     } else {
                         // Restaurar
                         button.setBorder(BorderFactory.createEmptyBorder(10, 25, 10, 25));
@@ -1222,126 +1064,6 @@ private JPanel createPasswordFieldWithStrengthMeter(String labelText, String pla
         
         return button;
     }
-    
-// Animação de transição entre os painéis
-private void animateCardSwitch(boolean toRegister) {
-    // Evita iniciar várias animações ao mesmo tempo
-    if (animationTimer != null && animationTimer.isRunning()) {
-        animationTimer.stop(); // Para qualquer animação em andamento
-    }
-    
-    // Redefine os painéis para posições iniciais corretas antes de iniciar
-    if (toRegister) {
-        loginPanel.setBounds(0, 0, 450, 550);
-        registerPanel.setBounds(450, 0, 450, 550);
-    } else {
-        loginPanel.setBounds(-450, 0, 450, 550);
-        registerPanel.setBounds(0, 0, 450, 550);
-    }
-    
-    // Garante que ambos os painéis estejam visíveis
-    loginPanel.setVisible(true);
-    registerPanel.setVisible(true);
-    
-    // Reinicia a contagem da animação
-    animationStep = 0;
-    
-    // Define o painel que está à frente durante a animação
-    cardPanel.removeAll();
-    cardPanel.add(loginPanel);
-    cardPanel.add(registerPanel);
-    
-    if (toRegister) {
-        cardPanel.setComponentZOrder(registerPanel, 0);
-        cardPanel.setComponentZOrder(loginPanel, 1);
-    } else {
-        cardPanel.setComponentZOrder(loginPanel, 0);
-        cardPanel.setComponentZOrder(registerPanel, 1);
-    }
-    
-    // Inicia a animação com um objeto completamente novo
-    animationTimer = new Timer(10, null);
-    animationTimer.addActionListener(new ActionListener() {
-        @Override
-        public void actionPerformed(ActionEvent e) {
-            animationStep++;
-            float progress = (float) animationStep / 30; // Ajuste a quantidade de passos aqui (30)
-            
-            if (toRegister) {
-                // Login desliza para a esquerda, registro desliza da direita
-                int loginX = (int) (-450 * progress);
-                int registerX = (int) (450 * (1 - progress));
-                
-                loginPanel.setBounds(loginX, 0, 450, 550);
-                registerPanel.setBounds(registerX, 0, 450, 550);
-            } else {
-                // Registro desliza para a direita, login desliza da esquerda
-                int registerX = (int) (450 * progress);
-                int loginX = (int) (-450 * (1 - progress));
-                
-                registerPanel.setBounds(registerX, 0, 450, 550);
-                loginPanel.setBounds(loginX, 0, 450, 550);
-            }
-            
-            // Atualiza a interface
-            cardPanel.validate();
-            cardPanel.repaint();
-            
-            // Quando a animação terminar
-            if (animationStep >= 30) { // Mesmo número de passos definido acima
-                animationTimer.stop();
-                
-                // Define posições finais precisas
-                if (toRegister) {
-                    loginPanel.setBounds(-450, 0, 450, 550);
-                    registerPanel.setBounds(0, 0, 450, 550);
-                } else {
-                    registerPanel.setBounds(450, 0, 450, 550);
-                    loginPanel.setBounds(0, 0, 450, 550);
-                }
-                
-                // Atualiza o estado
-                isLoginShowing = !toRegister;
-                
-                // Anima título se necessário
-                if (toRegister) {
-                    JLabel titleLabel = (JLabel) findComponentByName(registerPanel, "titleLabel");
-                    if (titleLabel != null) {
-                        animateTypingText(titleLabel, "Crie sua conta", 80);
-                    }
-                } else {
-                    JLabel titleLabel = (JLabel) findComponentByName(loginPanel, "titleLabel");
-                    if (titleLabel != null) {
-                        animateTypingText(titleLabel, "Bem-vindo de volta!", 80);
-                    }
-                }
-                
-                // Força uma atualização final
-                cardPanel.validate();
-                cardPanel.repaint();
-                
-                // Executa uma verificação final após pequeno atraso
-                Timer finalCheckTimer = new Timer(100, ev -> {
-                    if (toRegister) {
-                        if (registerPanel.getX() != 0) {
-                            registerPanel.setBounds(0, 0, 450, 550);
-                        }
-                    } else {
-                        if (loginPanel.getX() != 0) {
-                            loginPanel.setBounds(0, 0, 450, 550);
-                        }
-                    }
-                    cardPanel.validate();
-                    cardPanel.repaint();
-                });
-                finalCheckTimer.setRepeats(false);
-                finalCheckTimer.start();
-            }
-        }
-    });
-    
-    animationTimer.start();
-}
     
     // Animação de digitação de texto
     private void animateTypingText(JLabel label, String finalText, int delay) {
@@ -1365,19 +1087,358 @@ private void animateCardSwitch(boolean toRegister) {
         typingTimer.start();
     }
     
-    // Utilitário para encontrar componentes pelo nome
-    private Component findComponentByName(Container container, String name) {
+    // Animação de transição entre os painéis
+    private void animateCardSwitch(boolean toRegister) {
+        CardLayout cl = (CardLayout) cardPanel.getLayout();
+        if (toRegister) {
+            cl.show(cardPanel, "register");
+            // Se quiser adicionar animação de digitação ao título do registro
+            JLabel titleLabel = findTitleLabel(registerPanel);
+            if (titleLabel != null) {
+                animateTypingText(titleLabel, "Crie sua conta", 80);
+            }
+        } else {
+            cl.show(cardPanel, "login");
+            // Se quiser adicionar animação de digitação ao título do login
+            JLabel titleLabel = findTitleLabel(loginPanel);
+            if (titleLabel != null) {
+                animateTypingText(titleLabel, "Bem-vindo de volta!", 80);
+            }
+        }
+        isLoginShowing = !toRegister;
+    }
+    
+    // Método auxiliar para calcular a força da senha
+    private int calculatePasswordStrength(String password) {
+        int strength = 0;
+        
+        // Comprimento (até 40 pontos)
+        int length = password.length();
+        strength += Math.min(40, length * 4);
+        
+        // Variedade de caracteres (até 30 pontos)
+        boolean hasLowercase = false;
+        boolean hasUppercase = false;
+        boolean hasDigit = false;
+        boolean hasSpecial = false;
+        
+        for (char c : password.toCharArray()) {
+            if (Character.isLowerCase(c)) hasLowercase = true;
+            else if (Character.isUpperCase(c)) hasUppercase = true;
+            else if (Character.isDigit(c)) hasDigit = true;
+            else hasSpecial = true;
+        }
+        
+        int typesCount = 0;
+        if (hasLowercase) typesCount++;
+        if (hasUppercase) typesCount++;
+        if (hasDigit) typesCount++;
+        if (hasSpecial) typesCount++;
+        
+        strength += typesCount * 10;
+        
+        // Complexidade adicional (até 30 pontos)
+        if (length > 8 && typesCount >= 3) strength += 10;
+        if (length > 12 && typesCount == 4) strength += 20;
+        
+        return Math.min(100, strength);
+    }
+    
+    // Utilitário para encontrar o label do título
+    private JLabel findTitleLabel(Container container) {
         for (Component component : container.getComponents()) {
-            if (component instanceof JLabel && ((JLabel) component).getText().isEmpty()) {
-                return component;
+            if (component instanceof JLabel) {
+                JLabel label = (JLabel) component;
+                Font font = label.getFont();
+                if (font != null && font.getSize() >= 24) {
+                    return label;
+                }
             } else if (component instanceof Container) {
-                Component found = findComponentByName((Container) component, name);
+                JLabel found = findTitleLabel((Container) component);
                 if (found != null) {
                     return found;
                 }
             }
         }
         return null;
+    }
+    
+    // Método auxiliar para carregar ícones
+    private ImageIcon loadIcon(String path) {
+        try {
+            // Caminho para os ícones e imagens baseado na estrutura do projeto
+            String basePath = "C:\\Users\\Joao\\Documents\\2 - SOFTWARE\\Espaço Capital\\Coworking-System\\demo\\src\\main\\resources\\";
+            String fullPath = basePath;
+            
+            // Se o caminho já inclui "icons/", não adicione "icons/" novamente
+            if (path.startsWith("icons/")) {
+                fullPath += path;
+            } else if (path.startsWith("flyer")) {
+                // Se for um arquivo de flyer
+                fullPath += path;
+            } else {
+                // Caso contrário, assume que é um ícone
+                fullPath += "icons/" + path;
+            }
+            
+            File file = new File(fullPath);
+            if (file.exists()) {
+                return new ImageIcon(file.getAbsolutePath());
+            } else {
+                System.err.println("Arquivo não encontrado: " + fullPath);
+                return null;
+            }
+        } catch (Exception e) {
+            System.err.println("Erro ao carregar ícone: " + path);
+            e.printStackTrace();
+            return null;
+        }
+    }
+    // Método auxiliar para interpolar cores
+    private Color interpolateColor(Color c1, Color c2, float ratio) {
+        int red = (int) (c1.getRed() * (1 - ratio) + c2.getRed() * ratio);
+        int green = (int) (c1.getGreen() * (1 - ratio) + c2.getGreen() * ratio);
+        int blue = (int) (c1.getBlue() * (1 - ratio) + c2.getBlue() * ratio);
+        return new Color(red, green, blue);
+    }
+    
+    // Métodos adicionados para a funcionalidade de login/registro
+    
+    // Obter o campo de texto de um painel
+    private JTextField getTextFieldFromPanel(JPanel panel) {
+        for (Component component : panel.getComponents()) {
+            if (component instanceof JTextField) {
+                return (JTextField) component;
+            } else if (component instanceof JPanel) {
+                Component[] subComponents = ((JPanel) component).getComponents();
+                for (Component subComponent : subComponents) {
+                    if (subComponent instanceof JTextField) {
+                        return (JTextField) subComponent;
+                    }
+                }
+            }
+        }
+        return null;
+    }
+    
+    // Obter o campo de senha de um painel
+    private JPasswordField getPasswordFieldFromPanel(JPanel panel) {
+        for (Component component : panel.getComponents()) {
+            if (component instanceof JPasswordField) {
+                return (JPasswordField) component;
+            } else if (component instanceof JPanel) {
+                JPanel subPanel = (JPanel) component;
+                for (Component subComponent : subPanel.getComponents()) {
+                    if (subComponent instanceof JPasswordField) {
+                        return (JPasswordField) subComponent;
+                    } else if (subComponent instanceof JPanel) {
+                        // Busca recursiva mais profunda
+                        Component[] subSubComponents = ((JPanel) subComponent).getComponents();
+                        for (Component subSubComponent : subSubComponents) {
+                            if (subSubComponent instanceof JPasswordField) {
+                                return (JPasswordField) subSubComponent;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return null;
+    }
+    
+    // Verificar se um e-mail já existe no CSV
+    private boolean verificarEmailExistente(String email) {
+        try {
+            BufferedReader reader = new BufferedReader(new FileReader(CSV_FILE));
+            String line;
+            
+            // Pula a linha de cabeçalho
+            reader.readLine();
+            
+            while ((line = reader.readLine()) != null) {
+                String[] parts = line.split(",");
+                if (parts.length >= 2) {
+                    String csvEmail = parts[1].trim();
+                    
+                    if (csvEmail.equals(email)) {
+                        reader.close();
+                        return true;
+                    }
+                }
+            }
+            reader.close();
+        } catch (IOException e) {
+            JOptionPane.showMessageDialog(this, 
+                "Erro ao verificar e-mail: " + e.getMessage(), 
+                "Erro", 
+                JOptionPane.ERROR_MESSAGE);
+        }
+        return false;
+    }
+    
+    // Verificar credenciais no CSV
+    private boolean verificarCredenciais(String email, String senha) {
+        try {
+            BufferedReader reader = new BufferedReader(new FileReader(CSV_FILE));
+            String line;
+            
+            // Pula a linha de cabeçalho
+            reader.readLine();
+            
+            while ((line = reader.readLine()) != null) {
+                String[] parts = line.split(",");
+                if (parts.length >= 3) {
+                    String csvEmail = parts[1].trim();
+                    String csvSenha = parts[2].trim();
+                    
+                    if (csvEmail.equals(email) && csvSenha.equals(senha)) {
+                        reader.close();
+                        return true;
+                    }
+                }
+            }
+            reader.close();
+        } catch (IOException e) {
+            JOptionPane.showMessageDialog(this, 
+                "Erro ao verificar credenciais: " + e.getMessage(), 
+                "Erro", 
+                JOptionPane.ERROR_MESSAGE);
+        }
+        return false;
+    }
+    
+    // Validar formato de e-mail usando expressão regular
+    private boolean validarFormatoEmail(String email) {
+        String regex = "^[\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,4}$";
+        return email.matches(regex);
+    }
+    
+    // Salvar usuário no CSV
+    private boolean salvarUsuarioNoCSV(String nome, String email, String senha) {
+        try {
+            // Escapar vírgulas para não quebrar o formato CSV
+            nome = nome.replace(",", ";");
+            email = email.replace(",", ";");
+            senha = senha.replace(",", ";");
+            
+            // Abrir arquivo para adicionar (append)
+            FileWriter fw = new FileWriter(CSV_FILE, true);
+            BufferedWriter bw = new BufferedWriter(fw);
+            PrintWriter writer = new PrintWriter(bw);
+            
+            // Escrever a nova linha no CSV
+            writer.println(nome + "," + email + "," + senha);
+            writer.close();
+            
+            return true;
+        } catch (IOException e) {
+            JOptionPane.showMessageDialog(this, 
+                "Erro ao salvar usuário: " + e.getMessage(), 
+                "Erro", 
+                JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
+    }
+    
+    // Realizar login
+    private void realizarLogin() {
+        String email = emailLoginField.getText();
+        String senha = new String(passwordLoginField.getPassword());
+        
+        // Verificar se os campos não estão vazios ou com placeholders
+        if (email.isEmpty() || email.equals("Seu e-mail") || 
+            senha.isEmpty() || senha.equals("Sua senha")) {
+            JOptionPane.showMessageDialog(this, 
+                "Por favor, preencha todos os campos.", 
+                "Erro de Login", 
+                JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        
+        // Verificar credenciais no CSV
+        if (verificarCredenciais(email, senha)) {
+            JOptionPane.showMessageDialog(this, 
+                "Login realizado com sucesso!\nBem-vindo ao Espaço Capital.", 
+                "Sucesso", 
+                JOptionPane.INFORMATION_MESSAGE);
+            
+            // Aqui você pode abrir a próxima tela do sistema
+            // Por exemplo: 
+            // dispose(); // Fecha a tela de login
+            // new TelaInicial(email); // Abre a tela inicial passando o e-mail do usuário
+        } else {
+            JOptionPane.showMessageDialog(this, 
+                "E-mail ou senha incorretos.", 
+                "Erro de Login", 
+                JOptionPane.ERROR_MESSAGE);
+        }
+    }
+    
+    // Realizar registro
+    private void realizarRegistro() {
+        String nome = nameRegisterField.getText();
+        String email = emailRegisterField.getText();
+        String senha = new String(passwordRegisterField.getPassword());
+        
+        // Validar campos
+        if (nome.isEmpty() || nome.equals("Seu nome") || 
+            email.isEmpty() || email.equals("Seu e-mail") || 
+            senha.isEmpty() || senha.equals("Sua senha")) {
+            JOptionPane.showMessageDialog(this, 
+                "Por favor, preencha todos os campos.", 
+                "Erro de Registro", 
+                JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        
+        // Validar formato de e-mail
+        if (!validarFormatoEmail(email)) {
+            JOptionPane.showMessageDialog(this, 
+                "Por favor, insira um e-mail válido.", 
+                "Erro de Registro", 
+                JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        
+        // Validar força da senha
+        if (calculatePasswordStrength(senha) < 60) {
+            JOptionPane.showMessageDialog(this, 
+                "Por favor, escolha uma senha mais forte.", 
+                "Senha Fraca", 
+                JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        
+        // Verificar se o e-mail já está cadastrado
+        if (verificarEmailExistente(email)) {
+            JOptionPane.showMessageDialog(this, 
+                "Este e-mail já está cadastrado.", 
+                "E-mail Duplicado", 
+                JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        
+        // Salvar no CSV
+        if (salvarUsuarioNoCSV(nome, email, senha)) {
+            JOptionPane.showMessageDialog(this, 
+                "Registro realizado com sucesso!\nFaça login para continuar.", 
+                "Sucesso", 
+                JOptionPane.INFORMATION_MESSAGE);
+            
+            // Limpar campos
+            nameRegisterField.setText("Seu nome");
+            nameRegisterField.setForeground(new Color(180, 180, 180));
+            
+            emailRegisterField.setText("Seu e-mail");
+            emailRegisterField.setForeground(new Color(180, 180, 180));
+            
+            passwordRegisterField.setText("Sua senha");
+            passwordRegisterField.setEchoChar((char) 0);
+            passwordRegisterField.setForeground(new Color(180, 180, 180));
+            
+            // Voltar para a tela de login
+            animateCardSwitch(false);
+        }
     }
     
     // Método main para teste
@@ -1401,7 +1462,7 @@ private void animateCardSwitch(boolean toRegister) {
             e.printStackTrace();
         }
         
-        // Inicia o frame de login com animações
+        // Inicia o frame de login
         SwingUtilities.invokeLater(() -> new LoginUI());
     }
 }
