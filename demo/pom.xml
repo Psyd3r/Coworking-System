@@ -28,6 +28,13 @@
             <artifactId>miglayout-swing</artifactId>
             <version>5.3</version>
         </dependency>
+        
+        <!-- LGoodDatePicker para os componentes de data e hora -->
+        <dependency>
+            <groupId>com.github.lgooddatepicker</groupId>
+            <artifactId>LGoodDatePicker</artifactId>
+            <version>11.2.1</version>
+        </dependency>
     </dependencies>
     
     <build>
@@ -50,7 +57,7 @@
                         <manifest>
                             <addClasspath>true</addClasspath>
                             <classpathPrefix>lib/</classpathPrefix>
-                            <mainClass>espaco_capita.LoginUI</mainClass>
+                            <mainClass>espaco_capita.AgendamentoReunioesApp</mainClass>
                         </manifest>
                     </archive>
                 </configuration>
