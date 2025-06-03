@@ -693,19 +693,19 @@ public class TelaPrincipalUI extends JFrame {
             Calendar cal = Calendar.getInstance();
             cal.setTime(dataSelecionada);
 
-            Calendar calInicio = Calendar.getInstance();
-            calInicio.setTime(horaInicioSelecionada);
-            calInicio.set(Calendar.YEAR, cal.get(Calendar.YEAR));
-            calInicio.set(Calendar.MONTH, cal.get(Calendar.MONTH));
-            calInicio.set(Calendar.DAY_OF_MONTH, cal.get(Calendar.DAY_OF_MONTH));
-            Date horaInicioFinal = calInicio.getTime();
+            Calendar calInicioAgendamento = Calendar.getInstance();
+            calInicioAgendamento.setTime(horaInicioSelecionada);
+            calInicioAgendamento.set(Calendar.YEAR, cal.get(Calendar.YEAR));
+            calInicioAgendamento.set(Calendar.MONTH, cal.get(Calendar.MONTH));
+            calInicioAgendamento.set(Calendar.DAY_OF_MONTH, cal.get(Calendar.DAY_OF_MONTH));
+            Date horaInicioFinal = calInicioAgendamento.getTime();
 
-            Calendar calFim = Calendar.getInstance();
-            calFim.setTime(horaFimSelecionada);
-            calFim.set(Calendar.YEAR, cal.get(Calendar.YEAR));
-            calFim.set(Calendar.MONTH, cal.get(Calendar.MONTH));
-            calFim.set(Calendar.DAY_OF_MONTH, cal.get(Calendar.DAY_OF_MONTH));
-            Date horaFimFinal = calFim.getTime();
+            Calendar calFimAgendamento = Calendar.getInstance();
+            calFimAgendamento.setTime(horaFimSelecionada);
+            calFimAgendamento.set(Calendar.YEAR, cal.get(Calendar.YEAR));
+            calFimAgendamento.set(Calendar.MONTH, cal.get(Calendar.MONTH));
+            calFimAgendamento.set(Calendar.DAY_OF_MONTH, cal.get(Calendar.DAY_OF_MONTH));
+            Date horaFimFinal = calFimAgendamento.getTime();
 
             if (horaFimFinal.before(horaInicioFinal) || horaFimFinal.equals(horaInicioFinal)) {
                 JOptionPane.showMessageDialog(TelaPrincipalUI.this, "A hora de fim deve ser posterior à hora de início.", "Erro de Validação", JOptionPane.ERROR_MESSAGE);
