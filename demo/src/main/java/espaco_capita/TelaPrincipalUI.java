@@ -39,40 +39,50 @@ public class TelaPrincipalUI extends JFrame {
     // TODO: Refatorar para usar caminhos relativos (ex: getClass().getResource("/icons/nome_do_icone.png"))
     private ImageIcon loadIcon(String path) {
         try {
-            // Caminho para os ícones e imagens baseado na estrutura do projeto
-            // Este caminho precisa ser ajustado para o ambiente de execução ou tornado relativo.
-            String basePath = "C:\\Users\\Joao\\Documents\\2 - SOFTWARE\\Espaço Capital\\Coworking-System\\demo\\src\\main\\resources\\";
-            String fullPath = basePath;
-
-            // Se o caminho já inclui "icons/", não adicione "icons/" novamente
-            if (path.startsWith("icons/")) {
-                fullPath += path;
-            } else if (path.startsWith("flyer")) {
-                // Se for um arquivo de flyer (não aplicável aqui, mas mantido por consistência com o original)
-                fullPath += path;
-            } else {
-                // Caso contrário, assume que é um ícone dentro da pasta "icons"
-                fullPath += "icons/" + path;
+            // Prioriza o caminho completo se já for um caminho absoluto (mantendo a lógica original)
+            File fileFromPath = new File(path);
+            if (fileFromPath.isAbsolute() && fileFromPath.exists()) {
+                return new ImageIcon(path);
             }
 
-            File file = new File(fullPath);
-            if (file.exists()) {
-                return new ImageIcon(file.getAbsolutePath());
+            // Tenta carregar de src/main/resources/icons/
+            String basePathIcons = "demo/src/main/resources/icons/";
+            File iconFile = new File(basePathIcons + path);
+
+            if (iconFile.exists()) {
+                return new ImageIcon(iconFile.getAbsolutePath());
             } else {
-                System.err.println("Arquivo de ícone não encontrado: " + fullPath);
-                return null;
+                // Se não encontrar em /icons/, tenta carregar de src/main/resources/
+                String basePathResources = "demo/src/main/resources/";
+                File resourceFile = new File(basePathResources + path);
+                if (resourceFile.exists()) {
+                    return new ImageIcon(resourceFile.getAbsolutePath());
+                } else {
+                    // Tenta o caminho original usado na LoginUI que era absoluto
+                    // String originalLoginUIPath = "C:\Users\Joao\Documents\2 - SOFTWARE\Espaço Capital\Coworking-System\demo\src\main\resources\" + path;
+                    // File originalFile = new File(originalLoginUIPath);
+                    // if (originalFile.exists()) {
+                    //     return new ImageIcon(originalLoginUIPath);
+                    // }
+                    System.err.println("Arquivo de imagem não encontrado em /icons/ ou /resources/: " + path);
+                    return null; // Retorna null se não encontrar em nenhum dos locais comuns
+                }
             }
         } catch (Exception e) {
-            System.err.println("Erro ao carregar ícone: " + path);
+            System.err.println("Erro ao carregar ícone/imagem: " + path);
             e.printStackTrace();
             return null;
         }
     }
 
     private void inicializarComponentes() {
-        // Carregar ícones para as abas
-        iconeEspacos = loadIcon("user.png"); // Placeholder, idealmente um ícone de "local" ou "espaço"
-        iconeAgendas = loadIcon("calendar-day.png"); // Ícone de calendário
+        // Carregar ícones para as abas (agora são campos da classe)
+        this.iconeEspacos = loadIcon("user.png");
+        this.iconeAgendas = loadIcon("calendar-day.png");
+
+        // Carregar o ícone do logo
+        ImageIcon logoEmpresaIcon = loadIcon("logo.PNG"); // Carrega demo/src/main/resources/logo.PNG
+
 
         // Configuração do painel principal
         JPanel painelPrincipal = new JPanel(new BorderLayout());
@@ -80,51 +90,36 @@ public class TelaPrincipalUI extends JFrame {
         setContentPane(painelPrincipal);
 
         // Implementação da Sidebar
-        JPanel painelLateral = new JPanel(new BorderLayout()); // Mudar para BorderLayout
+        JPanel painelLateral = new JPanel(); // Recriar o painel
+        painelLateral.setLayout(new BoxLayout(painelLateral, BoxLayout.Y_AXIS)); // Layout vertical
         painelLateral.setBackground(VERDE_PRINCIPAL);
-        painelLateral.setPreferredSize(new Dimension(220, 0)); // Aumentar um pouco a largura
-        painelLateral.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15)); // Adicionar padding
+        painelLateral.setPreferredSize(new Dimension(250, 0)); // Largura ajustada
+        painelLateral.setBorder(BorderFactory.createEmptyBorder(15, 0, 15, 0)); // Padding (vertical, sem padding lateral nos botões)
 
-        JLabel tituloSidebar = new JLabel("Menu Principal");
-        tituloSidebar.setFont(new Font("Segoe UI", Font.BOLD, 18));
-        tituloSidebar.setForeground(BRANCO);
-        tituloSidebar.setHorizontalAlignment(SwingConstants.CENTER);
-        painelLateral.add(tituloSidebar, BorderLayout.NORTH);
+        // Usar os campos da classe para os ícones
+        JButton abaEspacosSidebar = new JButton("Espaços");
+        JButton abaAgendasSidebar = new JButton("Agendas");
 
-        // Adicionar um painel para itens do menu (exemplo)
-        JPanel menuItensPanel = new JPanel();
-        menuItensPanel.setLayout(new BoxLayout(menuItensPanel, BoxLayout.Y_AXIS));
-        menuItensPanel.setOpaque(false); // Transparente para mostrar o fundo verde
+        configurarBotaoSidebar(abaEspacosSidebar, this.iconeEspacos); // Usando this.iconeEspacos
+        configurarBotaoSidebar(abaAgendasSidebar, this.iconeAgendas); // Usando this.iconeAgendas
 
-        // Exemplo de itens (pode ser transformado em botões depois)
-        String[] itensMenu = {"Dashboard", "Minhas Reservas", "Configurações", "Sair"};
-        for (String item : itensMenu) {
-            JButton botaoMenu = new JButton(item);
-            botaoMenu.setFont(new Font("Segoe UI", Font.PLAIN, 16));
-            botaoMenu.setForeground(BRANCO);
-            botaoMenu.setBackground(VERDE_PRINCIPAL.darker()); // Um pouco mais escuro para diferenciar
-            botaoMenu.setOpaque(false);
-            botaoMenu.setBorderPainted(false);
-            botaoMenu.setFocusPainted(false);
-            botaoMenu.setCursor(new Cursor(Cursor.HAND_CURSOR));
-            botaoMenu.setAlignmentX(Component.LEFT_ALIGNMENT); // Alinhar à esquerda
-            botaoMenu.setMaximumSize(new Dimension(Integer.MAX_VALUE, botaoMenu.getPreferredSize().height)); // Para ocupar largura
+        // Alinhar botões à esquerda e garantir que ocupem a largura
+        abaEspacosSidebar.setAlignmentX(Component.LEFT_ALIGNMENT);
+        abaAgendasSidebar.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-            // Efeito Hover para botões do menu
-            botaoMenu.addMouseListener(new java.awt.event.MouseAdapter() {
-                public void mouseEntered(java.awt.event.MouseEvent evt) {
-                    botaoMenu.setOpaque(true); // Mostrar cor de fundo no hover
-                    botaoMenu.setBackground(VERDE_PRINCIPAL.brighter());
-                }
-                public void mouseExited(java.awt.event.MouseEvent evt) {
-                    botaoMenu.setOpaque(false);
-                    botaoMenu.setBackground(VERDE_PRINCIPAL.darker());
-                }
-            });
-            menuItensPanel.add(botaoMenu);
-            menuItensPanel.add(Box.createRigidArea(new Dimension(0, 10))); // Espaçamento entre botões
-        }
-        painelLateral.add(menuItensPanel, BorderLayout.CENTER);
+        // Para que os botões possam expandir horizontalmente com o BoxLayout
+        // Definindo um tamanho máximo onde a largura é grande, mas a altura é a preferida.
+        // O cálculo da altura preferida é feito após a configuração do botão, incluindo padding.
+        Dimension maxButtonSize = new Dimension(Integer.MAX_VALUE, abaEspacosSidebar.getPreferredSize().height);
+        abaEspacosSidebar.setMaximumSize(maxButtonSize);
+        abaAgendasSidebar.setMaximumSize(maxButtonSize);
+
+        painelLateral.add(Box.createVerticalStrut(10)); // Espaço no topo
+        painelLateral.add(abaEspacosSidebar);
+        painelLateral.add(Box.createVerticalStrut(10)); // Espaçamento entre botões
+        painelLateral.add(abaAgendasSidebar);
+        painelLateral.add(Box.createVerticalGlue()); // Empurra os botões para cima
+
         painelPrincipal.add(painelLateral, BorderLayout.WEST);
 
         // Implementação da Navbar
@@ -134,42 +129,23 @@ public class TelaPrincipalUI extends JFrame {
         painelNavbar.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10)); // Adiciona um padding
 
         // Espaço para o Logo (à esquerda)
-        JLabel labelLogo = new JLabel("LOGO EMPRESA"); // Placeholder para o logo
-        labelLogo.setFont(new Font("Segoe UI", Font.BOLD, 20));
-        labelLogo.setForeground(PRETO_SUAVE);
-        painelNavbar.add(labelLogo, BorderLayout.WEST);
+        JLabel labelLogo = new JLabel();
+        if (logoEmpresaIcon != null) {
+            // Redimensionar o logo para caber na navbar, se necessário
+            int logoAltura = 50; // Altura desejada para o logo na navbar
+            int logoLargura = -1; // Manter proporção, -1 para Image.SCALE_SMOOTH
+            Image imagemLogo = logoEmpresaIcon.getImage().getScaledInstance(logoLargura, logoAltura, Image.SCALE_SMOOTH);
+            labelLogo.setIcon(new ImageIcon(imagemLogo));
+        } else {
+            labelLogo.setText("LOGO"); // Fallback se o logo não carregar
+            labelLogo.setFont(new Font("Segoe UI", Font.BOLD, 20));
+            labelLogo.setForeground(PRETO_SUAVE);
+        }
+        painelNavbar.add(labelLogo, BorderLayout.WEST); // Ou BorderLayout.CENTER se preferir
 
-        // Painel para as Abas (à direita)
-        // Ajuste do FlowLayout para centralizar verticalmente os botões na navbar de 60px de altura
-        // A altura preferida de um botão temporário é usada para o cálculo.
-        // O espaçamento horizontal entre botões é aumentado para 25.
-        JPanel painelAbas = new JPanel(new FlowLayout(FlowLayout.RIGHT, 25, (60 - new JButton().getPreferredSize().height) / 2));
-        painelAbas.setOpaque(false); // Para herdar a cor da navbar
 
-        JButton abaEspacos = new JButton("Espaços");
-        // O ícone já é configurado dentro de configurarBotaoAba
-        // if (iconeEspacos != null) {
-        //    abaEspacos.setIcon(new ImageIcon(iconeEspacos.getImage().getScaledInstance(16, 16, Image.SCALE_SMOOTH)));
-        // }
-
-        JButton abaAgendas = new JButton("Agendas");
-        // O ícone já é configurado dentro de configurarBotaoAba
-        // if (iconeAgendas != null) {
-        //    abaAgendas.setIcon(new ImageIcon(iconeAgendas.getImage().getScaledInstance(16, 16, Image.SCALE_SMOOTH)));
-        // }
-
-        // Estilo adicional para botões da navbar
-        configurarBotaoAba(abaEspacos, iconeEspacos);
-        configurarBotaoAba(abaAgendas, iconeAgendas);
-
-        // As configurações individuais de fonte, cor, borda, etc., foram removidas daqui
-        // e movidas para o método configurarBotaoAba.
-
-        painelAbas.add(abaEspacos);
-        painelAbas.add(abaAgendas);
-
-        painelNavbar.add(painelAbas, BorderLayout.EAST);
-
+        // O painelAbas, abaEspacos, abaAgendas e suas configurações foram removidos daqui.
+        // A navbar agora contém apenas o logo.
         painelPrincipal.add(painelNavbar, BorderLayout.NORTH);
 
         // Área de Conteúdo Principal
@@ -188,6 +164,36 @@ public class TelaPrincipalUI extends JFrame {
         // Mais componentes serão adicionados aqui nos próximos passos
     }
 
+    private void configurarBotaoSidebar(JButton botao, ImageIcon icone) {
+        botao.setFont(new Font("Segoe UI", Font.BOLD, 16)); // Fonte para sidebar
+        botao.setForeground(BRANCO); // Texto branco para contraste com fundo verde
+        botao.setBackground(VERDE_PRINCIPAL); // Fundo verde da sidebar
+        botao.setOpaque(false); // Para controle do fundo no hover
+        botao.setFocusPainted(false);
+        botao.setBorderPainted(false); // Sem borda para um look mais integrado
+        botao.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        botao.setHorizontalAlignment(SwingConstants.LEFT);
+        botao.setIconTextGap(15); // Espaço entre ícone e texto
+        botao.setMargin(new Insets(10, 15, 10, 15)); // Padding interno do botão
+
+        if (icone != null) {
+            botao.setIcon(new ImageIcon(icone.getImage().getScaledInstance(22, 22, Image.SCALE_SMOOTH))); // Ícones um pouco maiores para sidebar
+        }
+
+        botao.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                botao.setOpaque(true);
+                botao.setBackground(VERDE_PRINCIPAL.brighter().brighter()); // Mais claro no hover
+            }
+
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                botao.setOpaque(false);
+                botao.setBackground(VERDE_PRINCIPAL); // Volta ao normal
+            }
+        });
+    }
+
+    /*
     private void configurarBotaoAba(JButton botao, ImageIcon icone) {
         botao.setFont(new Font("Segoe UI", Font.BOLD, 15)); // Fonte um pouco maior e bold
         botao.setForeground(PRETO_SUAVE);
@@ -218,6 +224,7 @@ public class TelaPrincipalUI extends JFrame {
             }
         });
     }
+    */
 
     // Método main para teste (opcional, mas recomendado)
     public static void main(String[] args) {
