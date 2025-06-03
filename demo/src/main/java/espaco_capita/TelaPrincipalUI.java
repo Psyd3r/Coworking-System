@@ -25,36 +25,46 @@ import java.util.Date; // Importação para Date (usado em SpinnerDateModel)
 import java.util.Calendar; // Importação para Calendar
 import javax.swing.DefaultListCellRenderer; // Importação para DefaultListCellRenderer
 import javax.swing.JList; // Importação para JList
-// GridBagLayout e GridBagConstraints já estão importados de java.awt.*
+import javax.swing.JCheckBox;
 
 public class TelaPrincipalUI extends JFrame {
 
     // Cores do sistema conforme a paleta definida na LoginUI
     private final Color VERDE_PRINCIPAL = Color.decode("#007a3e");
     private final Color CINZA_ESCURO = Color.decode("#3a3838");
-    // private final Color CINZA_CLARO = Color.decode("#d3d3d3"); // Removido se não usado
+    private final Color CINZA_CLARO = Color.decode("#d3d3d3");
     private final Color BRANCO = Color.decode("#ffffff");
     private final Color PRETO_SUAVE = Color.decode("#1a1a1a");
 
     // Ícones para as abas
     private ImageIcon iconeEspacos;
     private ImageIcon iconeAgendas;
-    // private ImageIcon iconeSair; // Declarar como campo se preferir
+    private ImageIcon iconeHorariosDisponiveis;
     private JPanel painelConteudo;
     private DefaultTableModel modeloTabelaEspacos;
     private DefaultTableModel modeloTabelaAgendamentos;
+    private DefaultTableModel modeloTabelaDisponibilidades;
     private java.util.List<Espaco> listaDeEspacos;
     private java.util.List<Agendamento> listaDeAgendamentos;
+    private java.util.List<DisponibilidadeEspaco> listaDisponibilidades;
 
     // Constantes para nomes de arquivos CSV
     private static final String ARQUIVO_ESPACOS_CSV = "demo/espacos.csv";
     private static final String ARQUIVO_AGENDAMENTOS_CSV = "demo/agendamentos.csv";
+    private static final String ARQUIVO_DISPONIBILIDADES_CSV = "demo/disponibilidades.csv";
 
     // Campos para os controles da aba Agendamentos
     private JComboBox<Espaco> comboBoxEspacosAgendamento;
     private JFormattedTextField campoDataAgendamento;
     private JSpinner spinnerHoraInicioAgendamento;
     private JSpinner spinnerHoraFimAgendamento;
+
+    // Campos para os controles da aba HorariosDisponiveis
+    private JComboBox<Espaco> comboBoxEspacosDisponibilidade;
+    private java.util.List<JCheckBox> checkBoxesDiasSemana;
+    private JSpinner spinnerHoraInicioDisp;
+    private JSpinner spinnerHoraFimDisp;
+
 
     public TelaPrincipalUI() {
         setTitle("Espaço Capital - Sistema de Agendamento");
@@ -98,13 +108,22 @@ public class TelaPrincipalUI extends JFrame {
     private void inicializarComponentes() {
         this.iconeEspacos = loadIcon("user.png");
         this.iconeAgendas = loadIcon("calendar-day.png");
-        // this.iconeSair = loadIcon("leave.png"); // Se fosse campo da classe
+        this.iconeHorariosDisponiveis = loadIcon("relogio-e-calendario.PNG");
+        if (this.iconeHorariosDisponiveis == null) {
+             this.iconeHorariosDisponiveis = loadIcon("calendar-day.png"); // Fallback
+        }
+        this.checkBoxesDiasSemana = new ArrayList<>();
+
 
         this.listaDeEspacos = new java.util.ArrayList<>();
         this.listaDeAgendamentos = new java.util.ArrayList<>();
+        this.listaDisponibilidades = new java.util.ArrayList<>();
+
 
         this.listaDeEspacos = GerenciadorCSVDados.carregarEspacosDoCSV(ARQUIVO_ESPACOS_CSV);
         this.listaDeAgendamentos = GerenciadorCSVDados.carregarAgendamentosDoCSV(ARQUIVO_AGENDAMENTOS_CSV, this.listaDeEspacos);
+        this.listaDisponibilidades = GerenciadorCSVDados.carregarDisponibilidadesDoCSV(ARQUIVO_DISPONIBILIDADES_CSV, this.listaDeEspacos);
+
 
         JPanel painelPrincipal = new JPanel(new BorderLayout());
         painelPrincipal.setBackground(BRANCO);
@@ -118,9 +137,11 @@ public class TelaPrincipalUI extends JFrame {
 
         JButton abaEspacosSidebar = new JButton("Espaços");
         JButton abaAgendasSidebar = new JButton("Agendas");
+        JButton abaHorariosDisponiveis = new JButton("Disponibilidade");
 
         configurarBotaoSidebar(abaEspacosSidebar, this.iconeEspacos);
         configurarBotaoSidebar(abaAgendasSidebar, this.iconeAgendas);
+        configurarBotaoSidebar(abaHorariosDisponiveis, this.iconeHorariosDisponiveis);
 
         abaEspacosSidebar.addActionListener(e -> {
             boolean painelJaExiste = false;
@@ -154,24 +175,44 @@ public class TelaPrincipalUI extends JFrame {
             ((CardLayout) this.painelConteudo.getLayout()).show(this.painelConteudo, "painelAgendas");
         });
 
+        abaHorariosDisponiveis.addActionListener(e -> {
+            final String NOME_PAINEL = "painelHorariosDisponiveis";
+            boolean painelJaExiste = false;
+            for (Component comp : painelConteudo.getComponents()) {
+                if (comp.getName() != null && comp.getName().equals(NOME_PAINEL)) {
+                    painelJaExiste = true;
+                    break;
+                }
+            }
+            if (!painelJaExiste) {
+                JPanel novoPainel = criarPainelHorariosDisponiveis();
+                novoPainel.setName(NOME_PAINEL);
+                this.painelConteudo.add(novoPainel, NOME_PAINEL);
+            }
+            ((CardLayout) this.painelConteudo.getLayout()).show(this.painelConteudo, NOME_PAINEL);
+        });
+
         abaEspacosSidebar.setAlignmentX(Component.LEFT_ALIGNMENT);
         abaAgendasSidebar.setAlignmentX(Component.LEFT_ALIGNMENT);
+        abaHorariosDisponiveis.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         Dimension maxButtonSize = new Dimension(Integer.MAX_VALUE, abaEspacosSidebar.getPreferredSize().height);
         abaEspacosSidebar.setMaximumSize(maxButtonSize);
         abaAgendasSidebar.setMaximumSize(maxButtonSize);
+        abaHorariosDisponiveis.setMaximumSize(maxButtonSize);
 
         painelLateral.add(Box.createVerticalStrut(10));
         painelLateral.add(abaEspacosSidebar);
         painelLateral.add(Box.createVerticalStrut(10));
         painelLateral.add(abaAgendasSidebar);
+        painelLateral.add(Box.createVerticalStrut(10));
+        painelLateral.add(abaHorariosDisponiveis);
 
-        // Botão Sair
-        ImageIcon iconeSairLocal = loadIcon("leave.png"); // Carregar ícone localmente
+        ImageIcon iconeSairLocal = loadIcon("leave.png");
         JButton botaoSair = new JButton("Sair");
         configurarBotaoSidebar(botaoSair, iconeSairLocal);
         botaoSair.setAlignmentX(Component.LEFT_ALIGNMENT);
-        botaoSair.setMaximumSize(maxButtonSize); // Reutilizar maxButtonSize
+        botaoSair.setMaximumSize(maxButtonSize);
 
         botaoSair.addActionListener(e -> {
             dispose();
@@ -181,7 +222,7 @@ public class TelaPrincipalUI extends JFrame {
             });
         });
 
-        painelLateral.add(Box.createVerticalStrut(10)); // Espaçamento acima do Sair
+        painelLateral.add(Box.createVerticalStrut(10));
         painelLateral.add(botaoSair);
 
         painelLateral.add(Box.createVerticalGlue());
@@ -775,24 +816,15 @@ public class TelaPrincipalUI extends JFrame {
 
     private void atualizarComboBoxEspacosAgendamento() {
         if (this.comboBoxEspacosAgendamento == null) {
-            // ComboBox ainda não foi inicializado (painel de Agendas talvez não aberto)
             return;
         }
-
-        // Salvar o item selecionado anteriormente, se houver e for válido
         Object itemSelecionadoAnteriormente = this.comboBoxEspacosAgendamento.getSelectedItem();
-
-        // Limpar itens existentes
         this.comboBoxEspacosAgendamento.removeAllItems();
-
-        // Repopular com a lista atualizada de espaços
         if (this.listaDeEspacos != null) {
             for (Espaco esp : this.listaDeEspacos) {
                 this.comboBoxEspacosAgendamento.addItem(esp);
             }
         }
-
-        // Tentar restaurar a seleção anterior, se ainda existir na lista
         if (itemSelecionadoAnteriormente instanceof Espaco) {
             Espaco espacoAnterior = (Espaco) itemSelecionadoAnteriormente;
             for (int i = 0; i < this.comboBoxEspacosAgendamento.getItemCount(); i++) {
@@ -803,15 +835,197 @@ public class TelaPrincipalUI extends JFrame {
                 }
             }
         } else if (this.comboBoxEspacosAgendamento.getItemCount() > 0) {
-            // Se não havia seleção válida ou o item anterior sumiu, seleciona o primeiro (se houver)
             this.comboBoxEspacosAgendamento.setSelectedIndex(0);
         }
-
-        // Atualizar a tabela de agendamentos, pois a seleção do combobox pode ter mudado
-        // ou os espaços disponíveis para filtro mudaram.
         atualizarTabelaAgendamentos();
     }
 
+    private JPanel criarPainelHorariosDisponiveis() {
+        JPanel painelPrincipalAba = new JPanel(new BorderLayout(10, 10));
+        painelPrincipalAba.setBackground(BRANCO);
+        painelPrincipalAba.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
+        JLabel tituloHorarios = new JLabel("Gerenciar Horários Disponíveis dos Espaços", SwingConstants.CENTER);
+        tituloHorarios.setFont(new Font("Segoe UI", Font.BOLD, 22));
+        tituloHorarios.setForeground(PRETO_SUAVE);
+        tituloHorarios.setBorder(BorderFactory.createEmptyBorder(0, 0, 20, 0));
+        painelPrincipalAba.add(tituloHorarios, BorderLayout.NORTH);
+
+        JPanel painelControles = new JPanel(new GridBagLayout());
+        painelControles.setBackground(BRANCO);
+        painelControles.setBorder(BorderFactory.createTitledBorder(
+            BorderFactory.createEtchedBorder(), "Definir Disponibilidade",
+            javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION,
+            javax.swing.border.TitledBorder.DEFAULT_POSITION,
+            new Font("Segoe UI", Font.BOLD, 14), PRETO_SUAVE
+        ));
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(5, 8, 5, 8);
+        gbc.anchor = GridBagConstraints.WEST;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+
+        gbc.gridx = 0; gbc.gridy = 0;
+        painelControles.add(new JLabel("Espaço:"), gbc);
+        gbc.gridx = 1; gbc.gridwidth = 3;
+        this.comboBoxEspacosDisponibilidade = new JComboBox<>();
+        if (this.listaDeEspacos != null) {
+            for (Espaco esp : this.listaDeEspacos) {
+                this.comboBoxEspacosDisponibilidade.addItem(esp);
+            }
+        }
+        this.comboBoxEspacosDisponibilidade.setRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+                super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                if (value instanceof Espaco) setText(((Espaco) value).getNome());
+                return this;
+            }
+        });
+        this.comboBoxEspacosDisponibilidade.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        this.comboBoxEspacosDisponibilidade.addActionListener(e -> atualizarTabelaDisponibilidades());
+        painelControles.add(this.comboBoxEspacosDisponibilidade, gbc);
+        gbc.gridwidth = 1;
+
+        gbc.gridx = 0; gbc.gridy = 1;
+        painelControles.add(new JLabel("Dias da Semana:"), gbc);
+        JPanel painelDiasSemana = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
+        painelDiasSemana.setBackground(BRANCO);
+        this.checkBoxesDiasSemana.clear();
+        for (DiaDaSemana dia : DiaDaSemana.values()) {
+            JCheckBox checkBox = new JCheckBox(dia.getNomeFormatado().substring(0, 3));
+            checkBox.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+            checkBox.setBackground(BRANCO);
+            checkBox.setName(dia.name());
+            this.checkBoxesDiasSemana.add(checkBox);
+            painelDiasSemana.add(checkBox);
+        }
+        gbc.gridx = 1; gbc.gridy = 1; gbc.gridwidth = 3;
+        painelControles.add(painelDiasSemana, gbc);
+        gbc.gridwidth = 1;
+
+        gbc.gridx = 0; gbc.gridy = 2;
+        painelControles.add(new JLabel("Das:"), gbc);
+        gbc.gridx = 1;
+        this.spinnerHoraInicioDisp = new JSpinner(new SpinnerDateModel());
+        JSpinner.DateEditor editorInicioDisp = new JSpinner.DateEditor(this.spinnerHoraInicioDisp, "HH:mm");
+        this.spinnerHoraInicioDisp.setEditor(editorInicioDisp);
+        this.spinnerHoraInicioDisp.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        ((JSpinner.DefaultEditor)this.spinnerHoraInicioDisp.getEditor()).getTextField().setColumns(4);
+        painelControles.add(this.spinnerHoraInicioDisp, gbc);
+
+        gbc.gridx = 2;
+        painelControles.add(new JLabel("Até:"), gbc);
+        gbc.gridx = 3;
+        this.spinnerHoraFimDisp = new JSpinner(new SpinnerDateModel());
+        JSpinner.DateEditor editorFimDisp = new JSpinner.DateEditor(this.spinnerHoraFimDisp, "HH:mm");
+        this.spinnerHoraFimDisp.setEditor(editorFimDisp);
+        this.spinnerHoraFimDisp.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        ((JSpinner.DefaultEditor)this.spinnerHoraFimDisp.getEditor()).getTextField().setColumns(4);
+        painelControles.add(this.spinnerHoraFimDisp, gbc);
+
+        gbc.gridx = 0; gbc.gridy = 3; gbc.gridwidth = 4;
+        gbc.anchor = GridBagConstraints.CENTER; gbc.fill = GridBagConstraints.NONE;
+        JButton botaoSalvarDisponibilidade = new JButton("Salvar Disponibilidade");
+
+        botaoSalvarDisponibilidade.addActionListener(e -> {
+            Espaco espacoSelecionado = (Espaco) this.comboBoxEspacosDisponibilidade.getSelectedItem();
+            if (espacoSelecionado == null) {
+                JOptionPane.showMessageDialog(this, "Por favor, selecione um espaço.", "Validação", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            Date horaInicio = (Date) this.spinnerHoraInicioDisp.getValue();
+            Date horaFim = (Date) this.spinnerHoraFimDisp.getValue();
+
+            Calendar calTemp = Calendar.getInstance();
+
+            calTemp.setTime(horaInicio);
+            calTemp.set(Calendar.YEAR, 1970);
+            calTemp.set(Calendar.MONTH, Calendar.JANUARY);
+            calTemp.set(Calendar.DAY_OF_MONTH, 1);
+            Date horaInicioNormalizada = calTemp.getTime();
+
+            calTemp.setTime(horaFim);
+            calTemp.set(Calendar.YEAR, 1970);
+            calTemp.set(Calendar.MONTH, Calendar.JANUARY);
+            calTemp.set(Calendar.DAY_OF_MONTH, 1);
+            Date horaFimNormalizada = calTemp.getTime();
+
+            if (horaFimNormalizada.before(horaInicioNormalizada) || horaFimNormalizada.equals(horaInicioNormalizada)) {
+                JOptionPane.showMessageDialog(this, "A hora de fim da disponibilidade deve ser posterior à hora de início.", "Validação", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            boolean algumDiaSelecionado = false;
+            for (JCheckBox checkBoxDia : this.checkBoxesDiasSemana) {
+                if (checkBoxDia.isSelected()) {
+                    algumDiaSelecionado = true;
+                    DiaDaSemana dia = DiaDaSemana.fromString(checkBoxDia.getName());
+
+                    if (dia != null) {
+                        this.listaDisponibilidades.removeIf(disp ->
+                            disp.getEspaco().getId().equals(espacoSelecionado.getId()) &&
+                            disp.getDiaDaSemana() == dia);
+
+                        DisponibilidadeEspaco novaDisp = new DisponibilidadeEspaco(
+                            espacoSelecionado,
+                            dia,
+                            horaInicioNormalizada,
+                            horaFimNormalizada
+                        );
+                        this.listaDisponibilidades.add(novaDisp);
+                    }
+                }
+            }
+
+            if (!algumDiaSelecionado) {
+                JOptionPane.showMessageDialog(this, "Por favor, selecione pelo menos um dia da semana.", "Validação", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            GerenciadorCSVDados.salvarDisponibilidadesNoCSV(ARQUIVO_DISPONIBILIDADES_CSV, this.listaDisponibilidades);
+            atualizarTabelaDisponibilidades();
+
+            JOptionPane.showMessageDialog(this, "Disponibilidade salva com sucesso!", "Sucesso", JOptionPane.INFORMATION_MESSAGE);
+
+            for (JCheckBox checkBoxDia : this.checkBoxesDiasSemana) {
+                checkBoxDia.setSelected(false);
+            }
+        });
+        painelControles.add(botaoSalvarDisponibilidade, gbc);
+
+        JPanel painelTabela = new JPanel(new BorderLayout());
+        painelTabela.setBackground(BRANCO);
+        painelTabela.setBorder(BorderFactory.createTitledBorder(
+            BorderFactory.createEtchedBorder(), "Disponibilidades Registradas para o Espaço",
+             javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION,
+             javax.swing.border.TitledBorder.DEFAULT_POSITION,
+            new Font("Segoe UI", Font.BOLD, 14), PRETO_SUAVE
+        ));
+
+        String[] colunasTabelaDisp = {"Dia da Semana", "Hora Início", "Hora Fim", "Ações"};
+        this.modeloTabelaDisponibilidades = new DefaultTableModel(colunasTabelaDisp, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) { return column == (colunasTabelaDisp.length - 1); }
+        };
+        JTable tabelaDisponibilidades = new JTable(this.modeloTabelaDisponibilidades);
+        tabelaDisponibilidades.setRowHeight(28);
+        JScrollPane scrollPaneTabelaDisp = new JScrollPane(tabelaDisponibilidades);
+        painelTabela.add(scrollPaneTabelaDisp, BorderLayout.CENTER);
+
+        painelPrincipalAba.add(painelControles, BorderLayout.NORTH);
+        painelPrincipalAba.add(painelTabela, BorderLayout.CENTER);
+
+        atualizarTabelaDisponibilidades();
+
+        return painelPrincipalAba;
+    }
+
+    private void atualizarTabelaDisponibilidades() {
+        if (this.modeloTabelaDisponibilidades == null) return;
+        this.modeloTabelaDisponibilidades.setRowCount(0);
+        System.out.println("Método atualizarTabelaDisponibilidades chamado (implementação pendente).");
+    }
     /*
     private void configurarBotaoAba(JButton botao, ImageIcon icone) {
         botao.setFont(new Font("Segoe UI", Font.BOLD, 15)); // Fonte um pouco maior e bold

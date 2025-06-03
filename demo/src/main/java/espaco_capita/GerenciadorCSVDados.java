@@ -6,9 +6,9 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.StringJoiner; // Importação adicionada
-import java.util.Calendar; // Importação adicionada
-import javax.swing.JOptionPane; // Importação para JOptionPane
+import java.util.StringJoiner;
+import java.util.Calendar;
+import javax.swing.JOptionPane;
 
 public class GerenciadorCSVDados {
 
@@ -25,7 +25,6 @@ public class GerenciadorCSVDados {
         if (!arquivoCSV.exists()) {
             System.out.println("Arquivo de espaços não encontrado, tentando criar: " + caminhoArquivo);
             try {
-                // Garante que os diretórios pais existam, se necessário
                 File diretorioPai = arquivoCSV.getParentFile();
                 if (diretorioPai != null && !diretorioPai.exists()) {
                     diretorioPai.mkdirs();
@@ -33,47 +32,34 @@ public class GerenciadorCSVDados {
 
                 if (arquivoCSV.createNewFile()) {
                     try (BufferedWriter bw = new BufferedWriter(new FileWriter(arquivoCSV))) {
-                        bw.write("id,nome,capacidade,descricao"); // Escreve o cabeçalho
+                        bw.write("id,nome,capacidade,descricao");
                         bw.newLine();
                         System.out.println("Arquivo espacos.csv criado com sucesso com cabeçalho.");
                     }
-                    return espacos; // Retorna lista vazia pois o arquivo acabou de ser criado
+                    return espacos;
                 } else {
                     System.err.println("Não foi possível criar o arquivo espacos.csv.");
-                    return espacos; // Retorna lista vazia em caso de falha na criação
+                    return espacos;
                 }
             } catch (IOException e) {
                 System.err.println("Erro ao tentar criar o arquivo espacos.csv: " + e.getMessage());
                 e.printStackTrace();
-                return espacos; // Retorna lista vazia em caso de exceção
+                JOptionPane.showMessageDialog(null, "Erro ao criar arquivo de espaços: " + e.getMessage(), "Erro de Arquivo", JOptionPane.ERROR_MESSAGE);
+                return espacos;
             }
         }
 
-        // Se o arquivo já existe, prossegue com a leitura normal
         try (BufferedReader br = new BufferedReader(new FileReader(arquivoCSV))) {
             String linha;
-            // Pular linha do cabeçalho, mas verificar se o arquivo não está vazio primeiro
             String cabecalho = br.readLine();
-            if (cabecalho == null || cabecalho.trim().isEmpty()) {
-                // Arquivo existe mas está vazio ou só tem o cabeçalho malformado.
-                // Pode ser um arquivo recém-criado que falhou ao escrever o cabeçalho, ou corrompido.
-                // Poderíamos tentar reescrever o cabeçalho se ele não corresponder ao esperado.
-                // Por simplicidade, se o cabeçalho não for o esperado, tratamos como vazio.
-                if (cabecalho == null || !cabecalho.equals("id,nome,capacidade,descricao")) {
-                     System.err.println("Arquivo espacos.csv está vazio ou com cabeçalho inválido. Tratando como lista vazia.");
-                     // Se o arquivo estiver realmente vazio, ou o cabeçalho não bater,
-                     // e quisermos garantir o cabeçalho, poderíamos fechar, reabrir para escrita,
-                     // escrever o cabeçalho e então retornar a lista vazia.
-                     // Mas isso complica a lógica de "apenas carregar".
-                     // A abordagem atual: se o arquivo existe mas está "estranho", não lê nada.
-                     return espacos;
-                }
+            if (cabecalho == null || !cabecalho.equals("id,nome,capacidade,descricao")) {
+                 System.err.println("Arquivo espacos.csv está vazio ou com cabeçalho inválido. Tratando como lista vazia.");
+                 return espacos;
             }
-
 
             while ((linha = br.readLine()) != null) {
                 if (linha.trim().isEmpty()) continue;
-                String[] dados = linha.split(SEPARADOR_CSV, -1); // -1 para incluir campos vazios no final
+                String[] dados = linha.split(SEPARADOR_CSV, -1);
 
                 if (dados.length >= 4) {
                     try {
@@ -91,7 +77,7 @@ public class GerenciadorCSVDados {
             }
         } catch (IOException e) {
             System.err.println("Erro ao ler o arquivo de espaços CSV: " + e.getMessage());
-            e.printStackTrace(); // Manter para debug
+            e.printStackTrace();
             JOptionPane.showMessageDialog(null,
                                           "Ocorreu um erro ao tentar carregar os dados dos espaços.\n" +
                                           "Verifique o console para mais detalhes.\n" +
@@ -104,7 +90,6 @@ public class GerenciadorCSVDados {
 
     public static void salvarEspacosNoCSV(String caminhoArquivo, List<Espaco> espacos) {
         try (BufferedWriter bw = new BufferedWriter(new FileWriter(caminhoArquivo))) {
-            // Escrever cabeçalho
             bw.write("id,nome,capacidade,descricao");
             bw.newLine();
 
@@ -119,7 +104,7 @@ public class GerenciadorCSVDados {
             }
         } catch (IOException e) {
             System.err.println("Erro ao salvar o arquivo de espaços CSV: " + e.getMessage());
-            e.printStackTrace(); // Manter para debug
+            e.printStackTrace();
             JOptionPane.showMessageDialog(null,
                                           "Ocorreu um erro ao tentar salvar os dados dos espaços.\n" +
                                           "Verifique as permissões do arquivo ou o espaço em disco.\n" +
@@ -145,11 +130,11 @@ public class GerenciadorCSVDados {
 
                 if (arquivoCSV.createNewFile()) {
                     try (BufferedWriter bw = new BufferedWriter(new FileWriter(arquivoCSV))) {
-                        bw.write("id,id_espaco,data,hora_inicio,hora_fim"); // Escreve o cabeçalho
+                        bw.write("id,id_espaco,data,hora_inicio,hora_fim");
                         bw.newLine();
                         System.out.println("Arquivo agendamentos.csv criado com sucesso com cabeçalho.");
                     }
-                    return agendamentos; // Retorna lista vazia pois o arquivo acabou de ser criado
+                    return agendamentos;
                 } else {
                     System.err.println("Não foi possível criar o arquivo agendamentos.csv.");
                     return agendamentos;
@@ -157,23 +142,18 @@ public class GerenciadorCSVDados {
             } catch (IOException e) {
                 System.err.println("Erro ao tentar criar o arquivo agendamentos.csv: " + e.getMessage());
                 e.printStackTrace();
+                JOptionPane.showMessageDialog(null, "Erro ao criar arquivo de agendamentos: " + e.getMessage(), "Erro de Arquivo", JOptionPane.ERROR_MESSAGE);
                 return agendamentos;
             }
         }
 
-        // Se o arquivo já existe, prossegue com a leitura normal
         try (BufferedReader br = new BufferedReader(new FileReader(arquivoCSV))) {
             String linha;
             String cabecalho = br.readLine();
-            if (cabecalho == null || cabecalho.trim().isEmpty()) {
-                if (cabecalho == null || !cabecalho.equals("id,id_espaco,data,hora_inicio,hora_fim")) {
-                     System.err.println("Arquivo agendamentos.csv está vazio ou com cabeçalho inválido. Tratando como lista vazia.");
-                     return agendamentos;
-                }
+            if (cabecalho == null || !cabecalho.equals("id,id_espaco,data,hora_inicio,hora_fim")) {
+                 System.err.println("Arquivo agendamentos.csv está vazio ou com cabeçalho inválido. Tratando como lista vazia.");
+                 return agendamentos;
             }
-            // Se o cabeçalho estiver lá mas não for o esperado, a lógica acima já retorna.
-            // Se for o esperado, o loop while abaixo não será afetado negativamente.
-
 
             while ((linha = br.readLine()) != null) {
                 if (linha.trim().isEmpty()) continue;
@@ -181,11 +161,11 @@ public class GerenciadorCSVDados {
 
                 if (dados.length >= 5) {
                     try {
-                        String idAgendamento = dados[0]; // Este ID não está sendo usado no construtor atual de Agendamento
+                        String idAgendamento = dados[0];
                         String idEspaco = dados[1];
                         Date data = FORMATO_DATA_CSV.parse(dados[2]);
-                        Date horaInicio = FORMATO_HORA_CSV.parse(dados[3]); // Parse direto como HH:mm
-                        Date horaFim = FORMATO_HORA_CSV.parse(dados[4]);   // Parse direto como HH:mm
+                        Date horaInicio = FORMATO_HORA_CSV.parse(dados[3]);
+                        Date horaFim = FORMATO_HORA_CSV.parse(dados[4]);
 
                         Espaco espacoAssociado = null;
                         for (Espaco esp : todosOsEspacos) {
@@ -196,7 +176,6 @@ public class GerenciadorCSVDados {
                         }
 
                         if (espacoAssociado != null) {
-                            // Para consistência, ajustar a data das horas para a data do agendamento
                             Calendar calData = Calendar.getInstance();
                             calData.setTime(data);
 
@@ -212,7 +191,6 @@ public class GerenciadorCSVDados {
                             calFim.set(Calendar.MONTH, calData.get(Calendar.MONTH));
                             calFim.set(Calendar.DAY_OF_MONTH, calData.get(Calendar.DAY_OF_MONTH));
 
-                            // Utiliza o novo construtor para preservar o ID do CSV
                             Agendamento ag = new Agendamento(idAgendamento, espacoAssociado, calData.getTime(), calInicio.getTime(), calFim.getTime());
                             agendamentos.add(ag);
 
@@ -228,7 +206,7 @@ public class GerenciadorCSVDados {
             }
         } catch (IOException e) {
             System.err.println("Erro ao ler o arquivo de agendamentos CSV: " + e.getMessage());
-            e.printStackTrace(); // Manter para debug
+            e.printStackTrace();
             JOptionPane.showMessageDialog(null,
                                           "Ocorreu um erro ao tentar carregar os dados dos agendamentos.\n" +
                                           "Verifique o console para mais detalhes.\n" +
@@ -256,7 +234,7 @@ public class GerenciadorCSVDados {
             }
         } catch (IOException e) {
             System.err.println("Erro ao salvar o arquivo de agendamentos CSV: " + e.getMessage());
-            e.printStackTrace(); // Manter para debug
+            e.printStackTrace();
             JOptionPane.showMessageDialog(null,
                                           "Ocorreu um erro ao tentar salvar os dados dos agendamentos.\n" +
                                           "Verifique as permissões do arquivo ou o espaço em disco.\n" +
@@ -265,6 +243,110 @@ public class GerenciadorCSVDados {
                                           JOptionPane.ERROR_MESSAGE);
         }
     }
+
+    // --- Métodos para DisponibilidadeEspaco ---
+
+    public static List<DisponibilidadeEspaco> carregarDisponibilidadesDoCSV(String caminhoArquivo, List<Espaco> todosOsEspacos) {
+        List<DisponibilidadeEspaco> disponibilidades = new ArrayList<>();
+        File arquivoCSV = new File(caminhoArquivo);
+
+        if (!arquivoCSV.exists()) {
+            System.out.println("Arquivo de disponibilidades não encontrado, tentando criar: " + caminhoArquivo);
+            try {
+                File diretorioPai = arquivoCSV.getParentFile();
+                if (diretorioPai != null && !diretorioPai.exists()) {
+                    diretorioPai.mkdirs();
+                }
+                if (arquivoCSV.createNewFile()) {
+                    try (BufferedWriter bw = new BufferedWriter(new FileWriter(arquivoCSV))) {
+                        bw.write("id_disponibilidade,id_espaco,dia_semana,hora_inicio,hora_fim"); // Cabeçalho
+                        bw.newLine();
+                        System.out.println("Arquivo disponibilidades.csv criado com sucesso com cabeçalho.");
+                    }
+                } else {
+                    System.err.println("Não foi possível criar o arquivo disponibilidades.csv.");
+                }
+            } catch (IOException e) {
+                System.err.println("Erro ao tentar criar o arquivo disponibilidades.csv: " + e.getMessage());
+                e.printStackTrace();
+                JOptionPane.showMessageDialog(null, "Erro ao criar arquivo de disponibilidades: " + e.getMessage(), "Erro de Arquivo", JOptionPane.ERROR_MESSAGE);
+            }
+            return disponibilidades; // Retorna lista vazia se o arquivo foi recém-criado ou falhou ao criar
+        }
+
+        try (BufferedReader br = new BufferedReader(new FileReader(arquivoCSV))) {
+            String linha;
+            String cabecalho = br.readLine(); // Pular linha do cabeçalho
+             if (cabecalho == null || !cabecalho.equals("id_disponibilidade,id_espaco,dia_semana,hora_inicio,hora_fim")) {
+                 System.err.println("Arquivo disponibilidades.csv está vazio ou com cabeçalho inválido. Tratando como lista vazia.");
+                 return disponibilidades;
+            }
+
+
+            while ((linha = br.readLine()) != null) {
+                if (linha.trim().isEmpty()) continue;
+                String[] dados = linha.split(SEPARADOR_CSV, -1);
+
+                if (dados.length >= 5) {
+                    try {
+                        String idDisponibilidade = dados[0];
+                        String idEspaco = dados[1];
+                        DiaDaSemana dia = DiaDaSemana.fromString(dados[2]); // Usar DiaDaSemana.fromString()
+                        Date horaInicio = FORMATO_HORA_CSV.parse(dados[3]);
+                        Date horaFim = FORMATO_HORA_CSV.parse(dados[4]);
+
+                        Espaco espacoAssociado = null;
+                        for (Espaco esp : todosOsEspacos) {
+                            if (esp.getId().equals(idEspaco)) {
+                                espacoAssociado = esp;
+                                break;
+                            }
+                        }
+
+                        if (espacoAssociado != null && dia != null) {
+                            DisponibilidadeEspaco disp = new DisponibilidadeEspaco(idDisponibilidade, espacoAssociado, dia, horaInicio, horaFim);
+                            disponibilidades.add(disp);
+                        } else {
+                            if (espacoAssociado == null) System.err.println("Espaço com ID " + idEspaco + " não encontrado para disponibilidade na linha: " + linha);
+                            if (dia == null) System.err.println("Dia da semana inválido '" + dados[2] + "' na linha: " + linha);
+                        }
+                    } catch (ParseException e) {
+                        System.err.println("Erro ao parsear hora em disponibilidades.csv: " + e.getMessage() + " na linha: " + linha);
+                    }
+                } else {
+                    System.err.println("Linha mal formatada em disponibilidades.csv: " + linha);
+                }
+            }
+        } catch (IOException e) {
+            System.err.println("Erro ao ler o arquivo de disponibilidades CSV: " + e.getMessage());
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(null, "Erro ao carregar disponibilidades: " + e.getMessage(), "Erro de Leitura", JOptionPane.ERROR_MESSAGE);
+        }
+        return disponibilidades;
+    }
+
+    public static void salvarDisponibilidadesNoCSV(String caminhoArquivo, List<DisponibilidadeEspaco> disponibilidades) {
+        try (BufferedWriter bw = new BufferedWriter(new FileWriter(caminhoArquivo))) {
+            bw.write("id_disponibilidade,id_espaco,dia_semana,hora_inicio,hora_fim");
+            bw.newLine();
+
+            for (DisponibilidadeEspaco disp : disponibilidades) {
+                StringJoiner sj = new StringJoiner(SEPARADOR_CSV);
+                sj.add(disp.getId());
+                sj.add(disp.getEspaco().getId());
+                sj.add(disp.getDiaDaSemana().name()); // Salvar o nome do enum (ex: SEGUNDA)
+                sj.add(FORMATO_HORA_CSV.format(disp.getHoraInicioDisponivel()));
+                sj.add(FORMATO_HORA_CSV.format(disp.getHoraFimDisponivel()));
+                bw.write(sj.toString());
+                bw.newLine();
+            }
+        } catch (IOException e) {
+            System.err.println("Erro ao salvar o arquivo de disponibilidades CSV: " + e.getMessage());
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(null, "Erro ao salvar disponibilidades: " + e.getMessage(), "Erro de Escrita", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
 
     // Método auxiliar para tratar strings que podem conter o separador CSV ou aspas.
     private static String tratarStringParaCSV(String valor) {
