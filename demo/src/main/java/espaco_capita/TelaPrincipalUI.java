@@ -32,18 +32,18 @@ public class TelaPrincipalUI extends JFrame {
     // Cores do sistema conforme a paleta definida na LoginUI
     private final Color VERDE_PRINCIPAL = Color.decode("#007a3e");
     private final Color CINZA_ESCURO = Color.decode("#3a3838");
-    private final Color CINZA_CLARO = Color.decode("#d3d3d3");
+    private final Color CINZA_CLARO = Color.decode("#d3d3d3"); // Mantida para possível uso futuro
     private final Color BRANCO = Color.decode("#ffffff");
     private final Color PRETO_SUAVE = Color.decode("#1a1a1a");
 
     // Ícones para as abas
     private ImageIcon iconeEspacos;
     private ImageIcon iconeAgendas;
-    private JPanel painelConteudo; // Adicionado como campo da classe
-    private DefaultTableModel modeloTabelaEspacos; // Adicionado para a tabela de espaços
-    private DefaultTableModel modeloTabelaAgendamentos; // Adicionado para a tabela de agendamentos
-    private java.util.List<Espaco> listaDeEspacos; // Lista para armazenar os espaços
-    private java.util.List<Agendamento> listaDeAgendamentos; // Lista para armazenar os agendamentos
+    private JPanel painelConteudo;
+    private DefaultTableModel modeloTabelaEspacos;
+    private DefaultTableModel modeloTabelaAgendamentos;
+    private java.util.List<Espaco> listaDeEspacos;
+    private java.util.List<Agendamento> listaDeAgendamentos;
 
     // Constantes para nomes de arquivos CSV
     private static final String ARQUIVO_ESPACOS_CSV = "demo/espacos.csv";
@@ -57,48 +57,34 @@ public class TelaPrincipalUI extends JFrame {
 
     public TelaPrincipalUI() {
         setTitle("Espaço Capital - Sistema de Agendamento");
-        setSize(1200, 800); // Tamanho sugerido, pode ser ajustado
+        setSize(1200, 800);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setLocationRelativeTo(null); // Centralizar na tela
-        setResizable(true); // Permitir redimensionamento
+        setLocationRelativeTo(null);
+        setResizable(true);
 
-        // Inicializar componentes da UI
         inicializarComponentes();
-
         setVisible(true);
     }
 
-    // Método para carregar ícones (copiado da LoginUI)
-    // TODO: Refatorar para usar caminhos relativos (ex: getClass().getResource("/icons/nome_do_icone.png"))
     private ImageIcon loadIcon(String path) {
         try {
-            // Prioriza o caminho completo se já for um caminho absoluto (mantendo a lógica original)
             File fileFromPath = new File(path);
             if (fileFromPath.isAbsolute() && fileFromPath.exists()) {
                 return new ImageIcon(path);
             }
-
-            // Tenta carregar de src/main/resources/icons/
             String basePathIcons = "demo/src/main/resources/icons/";
             File iconFile = new File(basePathIcons + path);
 
             if (iconFile.exists()) {
                 return new ImageIcon(iconFile.getAbsolutePath());
             } else {
-                // Se não encontrar em /icons/, tenta carregar de src/main/resources/
                 String basePathResources = "demo/src/main/resources/";
                 File resourceFile = new File(basePathResources + path);
                 if (resourceFile.exists()) {
                     return new ImageIcon(resourceFile.getAbsolutePath());
                 } else {
-                    // Tenta o caminho original usado na LoginUI que era absoluto
-                    // String originalLoginUIPath = "C:\Users\Joao\Documents\2 - SOFTWARE\Espaço Capital\Coworking-System\demo\src\main\resources\" + path;
-                    // File originalFile = new File(originalLoginUIPath);
-                    // if (originalFile.exists()) {
-                    //     return new ImageIcon(originalLoginUIPath);
-                    // }
                     System.err.println("Arquivo de imagem não encontrado em /icons/ ou /resources/: " + path);
-                    return null; // Retorna null se não encontrar em nenhum dos locais comuns
+                    return null;
                 }
             }
         } catch (Exception e) {
@@ -109,49 +95,32 @@ public class TelaPrincipalUI extends JFrame {
     }
 
     private void inicializarComponentes() {
-        // Carregar ícones para as abas (agora são campos da classe)
         this.iconeEspacos = loadIcon("user.png");
         this.iconeAgendas = loadIcon("calendar-day.png");
 
-        // Inicializar a lista de espaços
-        this.listaDeEspacos = new java.util.ArrayList<>(); // Já existia
-        this.listaDeAgendamentos = new java.util.ArrayList<>(); // Já existia
+        this.listaDeEspacos = new java.util.ArrayList<>();
+        this.listaDeAgendamentos = new java.util.ArrayList<>();
 
-        // Carregar dados dos CSVs
         this.listaDeEspacos = GerenciadorCSVDados.carregarEspacosDoCSV(ARQUIVO_ESPACOS_CSV);
-        // Para carregar agendamentos, precisamos da lista de espaços já carregada para associar os IDs.
         this.listaDeAgendamentos = GerenciadorCSVDados.carregarAgendamentosDoCSV(ARQUIVO_AGENDAMENTOS_CSV, this.listaDeEspacos);
 
-        // Dados de exemplo (para teste) - Remova ou comente em produção
-        // this.listaDeEspacos.add(new Espaco("Sala Alpha", 10, "Projetor, AC"));
-        // this.listaDeEspacos.add(new Espaco("Sala Beta", 5, "Quadro branco"));
-
-
-        // Carregar o ícone do logo
-        ImageIcon logoEmpresaIcon = loadIcon("logo.PNG"); // Carrega demo/src/main/resources/logo.PNG
-
-
-        // Configuração do painel principal
         JPanel painelPrincipal = new JPanel(new BorderLayout());
         painelPrincipal.setBackground(BRANCO);
         setContentPane(painelPrincipal);
 
-        // Implementação da Sidebar
-        JPanel painelLateral = new JPanel(); // Recriar o painel
-        painelLateral.setLayout(new BoxLayout(painelLateral, BoxLayout.Y_AXIS)); // Layout vertical
+        JPanel painelLateral = new JPanel();
+        painelLateral.setLayout(new BoxLayout(painelLateral, BoxLayout.Y_AXIS));
         painelLateral.setBackground(VERDE_PRINCIPAL);
-        painelLateral.setPreferredSize(new Dimension(250, 0)); // Largura ajustada
-        painelLateral.setBorder(BorderFactory.createEmptyBorder(15, 0, 15, 0)); // Padding (vertical, sem padding lateral nos botões)
+        painelLateral.setPreferredSize(new Dimension(250, 0));
+        painelLateral.setBorder(BorderFactory.createEmptyBorder(15, 0, 15, 0));
 
-        // Usar os campos da classe para os ícones
         JButton abaEspacosSidebar = new JButton("Espaços");
         JButton abaAgendasSidebar = new JButton("Agendas");
 
-        configurarBotaoSidebar(abaEspacosSidebar, this.iconeEspacos); // Usando this.iconeEspacos
-        configurarBotaoSidebar(abaAgendasSidebar, this.iconeAgendas); // Usando this.iconeAgendas
+        configurarBotaoSidebar(abaEspacosSidebar, this.iconeEspacos);
+        configurarBotaoSidebar(abaAgendasSidebar, this.iconeAgendas);
 
         abaEspacosSidebar.addActionListener(e -> {
-            // Verifica se o painel já existe no CardLayout
             boolean painelJaExiste = false;
             for (Component comp : painelConteudo.getComponents()) {
                 if (comp.getName() != null && comp.getName().equals("painelEspacos")) {
@@ -159,10 +128,9 @@ public class TelaPrincipalUI extends JFrame {
                     break;
                 }
             }
-
             if (!painelJaExiste) {
                 JPanel novoPainelEspacos = criarPainelEspacos();
-                novoPainelEspacos.setName("painelEspacos"); // Define um nome para o painel
+                novoPainelEspacos.setName("painelEspacos");
                 this.painelConteudo.add(novoPainelEspacos, "painelEspacos");
             }
             ((CardLayout) this.painelConteudo.getLayout()).show(this.painelConteudo, "painelEspacos");
@@ -176,7 +144,6 @@ public class TelaPrincipalUI extends JFrame {
                     break;
                 }
             }
-
             if (!painelJaExiste) {
                 JPanel novoPainelAgendas = criarPainelAgendas();
                 novoPainelAgendas.setName("painelAgendas");
@@ -185,104 +152,65 @@ public class TelaPrincipalUI extends JFrame {
             ((CardLayout) this.painelConteudo.getLayout()).show(this.painelConteudo, "painelAgendas");
         });
 
-        // Alinhar botões à esquerda e garantir que ocupem a largura
         abaEspacosSidebar.setAlignmentX(Component.LEFT_ALIGNMENT);
         abaAgendasSidebar.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        // Para que os botões possam expandir horizontalmente com o BoxLayout
-        // Definindo um tamanho máximo onde a largura é grande, mas a altura é a preferida.
-        // O cálculo da altura preferida é feito após a configuração do botão, incluindo padding.
         Dimension maxButtonSize = new Dimension(Integer.MAX_VALUE, abaEspacosSidebar.getPreferredSize().height);
         abaEspacosSidebar.setMaximumSize(maxButtonSize);
         abaAgendasSidebar.setMaximumSize(maxButtonSize);
 
-        painelLateral.add(Box.createVerticalStrut(10)); // Espaço no topo
+        painelLateral.add(Box.createVerticalStrut(10));
         painelLateral.add(abaEspacosSidebar);
-        painelLateral.add(Box.createVerticalStrut(10)); // Espaçamento entre botões
+        painelLateral.add(Box.createVerticalStrut(10));
         painelLateral.add(abaAgendasSidebar);
-        painelLateral.add(Box.createVerticalGlue()); // Empurra os botões para cima
+        painelLateral.add(Box.createVerticalGlue());
 
         painelPrincipal.add(painelLateral, BorderLayout.WEST);
 
-        // Implementação da Navbar
-        JPanel painelNavbar = new JPanel(new BorderLayout()); // Usar BorderLayout para alinhar logo e abas
-        painelNavbar.setBackground(CINZA_CLARO); // Ou outra cor de sua preferência para a navbar
-        painelNavbar.setPreferredSize(new Dimension(0, 60)); // Altura de 60, largura 0 para que o layout gerencie
-        painelNavbar.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10)); // Adiciona um padding
+        // Removida a Navbar e o labelLogo daqui
 
-        // Espaço para o Logo (à esquerda)
-        JLabel labelLogo = new JLabel();
-        if (logoEmpresaIcon != null) {
-            // Aumentar a altura do logo e garantir SCALE_SMOOTH para qualidade
-            int logoAltura = 55; // Nova altura aumentada (navbar tem 60px)
-            int logoLargura = -1;  // Manter -1 para que a largura seja calculada proporcionalmente à nova altura
+        this.painelConteudo = new JPanel(new CardLayout());
+        this.painelConteudo.setBackground(BRANCO);
+        this.painelConteudo.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-            // Usar Image.SCALE_SMOOTH para melhor qualidade de redimensionamento
-            Image imagemLogo = logoEmpresaIcon.getImage().getScaledInstance(logoLargura, logoAltura, Image.SCALE_SMOOTH);
-            labelLogo.setIcon(new ImageIcon(imagemLogo));
-        } else {
-            labelLogo.setText("LOGO"); // Fallback se o logo não carregar
-            labelLogo.setFont(new Font("Segoe UI", Font.BOLD, 20));
-            labelLogo.setForeground(PRETO_SUAVE);
-        }
-        painelNavbar.add(labelLogo, BorderLayout.WEST); // Ou BorderLayout.CENTER se preferir
-
-
-        // O painelAbas, abaEspacos, abaAgendas e suas configurações foram removidos daqui.
-        // A navbar agora contém apenas o logo.
-        painelPrincipal.add(painelNavbar, BorderLayout.NORTH);
-
-        // Área de Conteúdo Principal
-        this.painelConteudo = new JPanel(new CardLayout()); // MUDAR PARA CARDLAYOUT
-        this.painelConteudo.setBackground(BRANCO); // Cor de fundo padrão
-        this.painelConteudo.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10)); // Padding
-
-        // Adicionar um painel inicial/default ao painelConteudo
         JPanel painelDefault = new JPanel(new BorderLayout());
         painelDefault.setBackground(BRANCO);
         JLabel labelDefault = new JLabel("Bem-vindo! Selecione uma opção na barra lateral.", SwingConstants.CENTER);
         labelDefault.setFont(new Font("Segoe UI", Font.PLAIN, 18));
         labelDefault.setForeground(CINZA_ESCURO);
         painelDefault.add(labelDefault, BorderLayout.CENTER);
-        this.painelConteudo.add(painelDefault, "painelDefault"); // Adiciona com um nome
+        this.painelConteudo.add(painelDefault, "painelDefault");
 
-        // ((CardLayout) this.painelConteudo.getLayout()).show(this.painelConteudo, "painelDefault"); // Mostra o default
         painelPrincipal.add(this.painelConteudo, BorderLayout.CENTER);
-
-
-        // Mais componentes serão adicionados aqui nos próximos passos
     }
 
     private JPanel criarPainelEspacos() {
         JPanel painel = new JPanel(new BorderLayout());
-        painel.setBackground(BRANCO); // Cor de fundo para o painel de espaços
+        painel.setBackground(BRANCO);
         painel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
         JLabel tituloEspacos = new JLabel("Gerenciamento de Espaços", SwingConstants.CENTER);
         tituloEspacos.setFont(new Font("Segoe UI", Font.BOLD, 22));
         tituloEspacos.setForeground(PRETO_SUAVE);
-        tituloEspacos.setBorder(BorderFactory.createEmptyBorder(0, 0, 15, 0)); // Margem inferior
+        tituloEspacos.setBorder(BorderFactory.createEmptyBorder(0, 0, 15, 0));
         painel.add(tituloEspacos, BorderLayout.NORTH);
 
-        // Painel para agrupar botões de ação e a tabela
-        JPanel painelCentralEspacos = new JPanel(new BorderLayout(0, 10)); // Espaçamento vertical de 10px
-        painelCentralEspacos.setOpaque(false); // Transparente para herdar cor do painel principal da aba
+        JPanel painelCentralEspacos = new JPanel(new BorderLayout(0, 10));
+        painelCentralEspacos.setOpaque(false);
 
-        // Painel para o botão "Novo Espaço"
-        JPanel painelBotoesAcao = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0)); // Alinhado à esquerda
+        JPanel painelBotoesAcao = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
         painelBotoesAcao.setOpaque(false);
 
         JButton botaoNovoEspaco = new JButton("Novo Espaço");
         botaoNovoEspaco.setFont(new Font("Segoe UI", Font.BOLD, 14));
         botaoNovoEspaco.setForeground(BRANCO);
-        botaoNovoEspaco.setBackground(VERDE_PRINCIPAL); // Usando a cor verde principal
-        botaoNovoEspaco.setOpaque(true); // Precisa ser opaco para a cor de fundo aparecer
-        botaoNovoEspaco.setBorderPainted(false); // Para um look mais moderno
+        botaoNovoEspaco.setBackground(VERDE_PRINCIPAL);
+        botaoNovoEspaco.setOpaque(true);
+        botaoNovoEspaco.setBorderPainted(false);
         botaoNovoEspaco.setFocusPainted(false);
         botaoNovoEspaco.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        botaoNovoEspaco.setMargin(new Insets(8, 15, 8, 15)); // Padding interno
+        botaoNovoEspaco.setMargin(new Insets(8, 15, 8, 15));
 
-        // Efeito hover para o botão Novo Espaço
         botaoNovoEspaco.addMouseListener(new java.awt.event.MouseAdapter() {
             Color originalColor = botaoNovoEspaco.getBackground();
             public void mouseEntered(java.awt.event.MouseEvent evt) {
@@ -295,9 +223,9 @@ public class TelaPrincipalUI extends JFrame {
 
         botaoNovoEspaco.addActionListener(e -> {
             FormularioEspacoDialog dialogoNovoEspaco = new FormularioEspacoDialog(
-                TelaPrincipalUI.this, // Passa a instância da JFrame principal como pai
+                TelaPrincipalUI.this,
                 "Adicionar Novo Espaço",
-                null // Passa null para espacoParaEditar, indicando que é um novo espaço
+                null
             );
             dialogoNovoEspaco.setVisible(true);
 
