@@ -32,13 +32,14 @@ public class TelaPrincipalUI extends JFrame {
     // Cores do sistema conforme a paleta definida na LoginUI
     private final Color VERDE_PRINCIPAL = Color.decode("#007a3e");
     private final Color CINZA_ESCURO = Color.decode("#3a3838");
-    private final Color CINZA_CLARO = Color.decode("#d3d3d3"); // Mantida para possível uso futuro
+    // private final Color CINZA_CLARO = Color.decode("#d3d3d3"); // Removido se não usado
     private final Color BRANCO = Color.decode("#ffffff");
     private final Color PRETO_SUAVE = Color.decode("#1a1a1a");
 
     // Ícones para as abas
     private ImageIcon iconeEspacos;
     private ImageIcon iconeAgendas;
+    // private ImageIcon iconeSair; // Declarar como campo se preferir
     private JPanel painelConteudo;
     private DefaultTableModel modeloTabelaEspacos;
     private DefaultTableModel modeloTabelaAgendamentos;
@@ -97,6 +98,7 @@ public class TelaPrincipalUI extends JFrame {
     private void inicializarComponentes() {
         this.iconeEspacos = loadIcon("user.png");
         this.iconeAgendas = loadIcon("calendar-day.png");
+        // this.iconeSair = loadIcon("leave.png"); // Se fosse campo da classe
 
         this.listaDeEspacos = new java.util.ArrayList<>();
         this.listaDeAgendamentos = new java.util.ArrayList<>();
@@ -163,11 +165,27 @@ public class TelaPrincipalUI extends JFrame {
         painelLateral.add(abaEspacosSidebar);
         painelLateral.add(Box.createVerticalStrut(10));
         painelLateral.add(abaAgendasSidebar);
+
+        // Botão Sair
+        ImageIcon iconeSairLocal = loadIcon("leave.png"); // Carregar ícone localmente
+        JButton botaoSair = new JButton("Sair");
+        configurarBotaoSidebar(botaoSair, iconeSairLocal);
+        botaoSair.setAlignmentX(Component.LEFT_ALIGNMENT);
+        botaoSair.setMaximumSize(maxButtonSize); // Reutilizar maxButtonSize
+
+        botaoSair.addActionListener(e -> {
+            dispose();
+            SwingUtilities.invokeLater(() -> {
+                LoginUI loginScreen = new LoginUI();
+                loginScreen.setVisible(true);
+            });
+        });
+
+        painelLateral.add(Box.createVerticalStrut(10)); // Espaçamento acima do Sair
+        painelLateral.add(botaoSair);
+
         painelLateral.add(Box.createVerticalGlue());
-
         painelPrincipal.add(painelLateral, BorderLayout.WEST);
-
-        // Removida a Navbar e o labelLogo daqui
 
         this.painelConteudo = new JPanel(new CardLayout());
         this.painelConteudo.setBackground(BRANCO);
