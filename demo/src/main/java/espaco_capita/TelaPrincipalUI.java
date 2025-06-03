@@ -131,9 +131,11 @@ public class TelaPrincipalUI extends JFrame {
         // Espaço para o Logo (à esquerda)
         JLabel labelLogo = new JLabel();
         if (logoEmpresaIcon != null) {
-            // Redimensionar o logo para caber na navbar, se necessário
-            int logoAltura = 50; // Altura desejada para o logo na navbar
-            int logoLargura = -1; // Manter proporção, -1 para Image.SCALE_SMOOTH
+            // Aumentar a altura do logo e garantir SCALE_SMOOTH para qualidade
+            int logoAltura = 55; // Nova altura aumentada (navbar tem 60px)
+            int logoLargura = -1;  // Manter -1 para que a largura seja calculada proporcionalmente à nova altura
+
+            // Usar Image.SCALE_SMOOTH para melhor qualidade de redimensionamento
             Image imagemLogo = logoEmpresaIcon.getImage().getScaledInstance(logoLargura, logoAltura, Image.SCALE_SMOOTH);
             labelLogo.setIcon(new ImageIcon(imagemLogo));
         } else {
