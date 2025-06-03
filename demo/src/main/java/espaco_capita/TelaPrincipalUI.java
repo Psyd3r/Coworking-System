@@ -436,6 +436,32 @@ public class TelaPrincipalUI extends JFrame {
         return painel;
     }
 
+    private java.util.Date parseData(String dataStr) {
+        try {
+            // Usar o formato correto que o JFormattedTextField está configurado para produzir
+            // ou o formato esperado do usuário.
+            return new java.text.SimpleDateFormat("dd/MM/yyyy").parse(dataStr);
+        } catch (java.text.ParseException e) {
+            System.err.println("Erro ao parsear data: " + dataStr + " - " + e.getMessage());
+            // Considerar notificar o usuário via JOptionPane aqui também ou retornar null e tratar no chamador.
+            return null;
+        }
+    }
+
+    private boolean isMesmaData(java.util.Date data1, java.util.Date data2) {
+        if (data1 == null || data2 == null) {
+            return false;
+        }
+        // Usar Calendar para comparar apenas ano, mês e dia.
+        java.util.Calendar cal1 = java.util.Calendar.getInstance();
+        cal1.setTime(data1);
+        java.util.Calendar cal2 = java.util.Calendar.getInstance();
+        cal2.setTime(data2);
+        return cal1.get(java.util.Calendar.YEAR) == cal2.get(java.util.Calendar.YEAR) &&
+               cal1.get(java.util.Calendar.MONTH) == cal2.get(java.util.Calendar.MONTH) &&
+               cal1.get(java.util.Calendar.DAY_OF_MONTH) == cal2.get(java.util.Calendar.DAY_OF_MONTH);
+    }
+
     private void atualizarTabelaEspacos() {
         // Limpar tabela existente
         if (this.modeloTabelaEspacos == null) {
