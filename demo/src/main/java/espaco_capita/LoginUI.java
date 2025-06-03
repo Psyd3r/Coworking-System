@@ -1579,10 +1579,13 @@ private void animateCardSwitch(boolean toRegister) {
                 "Sucesso", 
                 JOptionPane.INFORMATION_MESSAGE);
             
-            // Aqui você pode abrir a próxima tela do sistema
-            // Por exemplo: 
-            // dispose(); // Fecha a tela de login
-            // new TelaInicial(email); // Abre a tela inicial passando o e-mail do usuário
+            // Abrir a TelaPrincipalUI
+            SwingUtilities.invokeLater(() -> {
+                new TelaPrincipalUI().setVisible(true);
+            });
+
+            // Fechar a tela de login atual
+            dispose();
         } else {
             JOptionPane.showMessageDialog(this, 
                 "E-mail ou senha incorretos.", 
