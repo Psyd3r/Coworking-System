@@ -338,7 +338,7 @@ public class TelaPrincipalUI extends JFrame {
 
         // Estilização da tabela (opcional, mas recomendado)
         tabelaEspacos.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        tabelaEspacos.setRowHeight(30); // Altura da linha
+        tabelaEspacos.setRowHeight(36); // Nova altura da linha (ex: 30 para o botão + 6 de padding vertical)
         tabelaEspacos.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 15));
         tabelaEspacos.getTableHeader().setBackground(CINZA_CLARO); // Cor do cabeçalho
         tabelaEspacos.getTableHeader().setForeground(PRETO_SUAVE);
@@ -353,9 +353,9 @@ public class TelaPrincipalUI extends JFrame {
             tabelaEspacos.getColumnModel().getColumn(indiceColunaAcoes).setCellEditor(rendererEditor);
 
             // Definir largura preferida para a coluna de ações
-            tabelaEspacos.getColumnModel().getColumn(indiceColunaAcoes).setPreferredWidth(130); // Ajuste conforme necessário
-            tabelaEspacos.getColumnModel().getColumn(indiceColunaAcoes).setMinWidth(120);
-            tabelaEspacos.getColumnModel().getColumn(indiceColunaAcoes).setMaxWidth(150);
+            tabelaEspacos.getColumnModel().getColumn(indiceColunaAcoes).setPreferredWidth(85); // Nova largura preferida
+            tabelaEspacos.getColumnModel().getColumn(indiceColunaAcoes).setMinWidth(80);    // Nova largura mínima
+            tabelaEspacos.getColumnModel().getColumn(indiceColunaAcoes).setMaxWidth(100);   // Nova largura máxima
 
 
             // Adicionar ActionListeners específicos para os botões do editor
