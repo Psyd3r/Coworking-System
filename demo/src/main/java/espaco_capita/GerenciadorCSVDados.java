@@ -22,16 +22,56 @@ public class GerenciadorCSVDados {
         File arquivoCSV = new File(caminhoArquivo);
 
         if (!arquivoCSV.exists()) {
-            System.out.println("Arquivo de espaços não encontrado, iniciando com lista vazia: " + caminhoArquivo);
-            return espacos; // Retorna lista vazia se o arquivo não existe
+            System.out.println("Arquivo de espaços não encontrado, tentando criar: " + caminhoArquivo);
+            try {
+                // Garante que os diretórios pais existam, se necessário
+                File diretorioPai = arquivoCSV.getParentFile();
+                if (diretorioPai != null && !diretorioPai.exists()) {
+                    diretorioPai.mkdirs();
+                }
+
+                if (arquivoCSV.createNewFile()) {
+                    try (BufferedWriter bw = new BufferedWriter(new FileWriter(arquivoCSV))) {
+                        bw.write("id,nome,capacidade,descricao"); // Escreve o cabeçalho
+                        bw.newLine();
+                        System.out.println("Arquivo espacos.csv criado com sucesso com cabeçalho.");
+                    }
+                    return espacos; // Retorna lista vazia pois o arquivo acabou de ser criado
+                } else {
+                    System.err.println("Não foi possível criar o arquivo espacos.csv.");
+                    return espacos; // Retorna lista vazia em caso de falha na criação
+                }
+            } catch (IOException e) {
+                System.err.println("Erro ao tentar criar o arquivo espacos.csv: " + e.getMessage());
+                e.printStackTrace();
+                return espacos; // Retorna lista vazia em caso de exceção
+            }
         }
 
+        // Se o arquivo já existe, prossegue com a leitura normal
         try (BufferedReader br = new BufferedReader(new FileReader(arquivoCSV))) {
             String linha;
-            br.readLine(); // Pular linha do cabeçalho
+            // Pular linha do cabeçalho, mas verificar se o arquivo não está vazio primeiro
+            String cabecalho = br.readLine();
+            if (cabecalho == null || cabecalho.trim().isEmpty()) {
+                // Arquivo existe mas está vazio ou só tem o cabeçalho malformado.
+                // Pode ser um arquivo recém-criado que falhou ao escrever o cabeçalho, ou corrompido.
+                // Poderíamos tentar reescrever o cabeçalho se ele não corresponder ao esperado.
+                // Por simplicidade, se o cabeçalho não for o esperado, tratamos como vazio.
+                if (cabecalho == null || !cabecalho.equals("id,nome,capacidade,descricao")) {
+                     System.err.println("Arquivo espacos.csv está vazio ou com cabeçalho inválido. Tratando como lista vazia.");
+                     // Se o arquivo estiver realmente vazio, ou o cabeçalho não bater,
+                     // e quisermos garantir o cabeçalho, poderíamos fechar, reabrir para escrita,
+                     // escrever o cabeçalho e então retornar a lista vazia.
+                     // Mas isso complica a lógica de "apenas carregar".
+                     // A abordagem atual: se o arquivo existe mas está "estranho", não lê nada.
+                     return espacos;
+                }
+            }
+
 
             while ((linha = br.readLine()) != null) {
-                if (linha.trim().isEmpty()) continue; // Pular linhas vazias
+                if (linha.trim().isEmpty()) continue;
                 String[] dados = linha.split(SEPARADOR_CSV, -1); // -1 para incluir campos vazios no final
 
                 if (dados.length >= 4) {
@@ -83,13 +123,44 @@ public class GerenciadorCSVDados {
         File arquivoCSV = new File(caminhoArquivo);
 
         if (!arquivoCSV.exists()) {
-            System.out.println("Arquivo de agendamentos não encontrado, iniciando com lista vazia: " + caminhoArquivo);
-            return agendamentos;
+            System.out.println("Arquivo de agendamentos não encontrado, tentando criar: " + caminhoArquivo);
+            try {
+                File diretorioPai = arquivoCSV.getParentFile();
+                if (diretorioPai != null && !diretorioPai.exists()) {
+                    diretorioPai.mkdirs();
+                }
+
+                if (arquivoCSV.createNewFile()) {
+                    try (BufferedWriter bw = new BufferedWriter(new FileWriter(arquivoCSV))) {
+                        bw.write("id,id_espaco,data,hora_inicio,hora_fim"); // Escreve o cabeçalho
+                        bw.newLine();
+                        System.out.println("Arquivo agendamentos.csv criado com sucesso com cabeçalho.");
+                    }
+                    return agendamentos; // Retorna lista vazia pois o arquivo acabou de ser criado
+                } else {
+                    System.err.println("Não foi possível criar o arquivo agendamentos.csv.");
+                    return agendamentos;
+                }
+            } catch (IOException e) {
+                System.err.println("Erro ao tentar criar o arquivo agendamentos.csv: " + e.getMessage());
+                e.printStackTrace();
+                return agendamentos;
+            }
         }
 
+        // Se o arquivo já existe, prossegue com a leitura normal
         try (BufferedReader br = new BufferedReader(new FileReader(arquivoCSV))) {
             String linha;
-            br.readLine(); // Pular linha do cabeçalho
+            String cabecalho = br.readLine();
+            if (cabecalho == null || cabecalho.trim().isEmpty()) {
+                if (cabecalho == null || !cabecalho.equals("id,id_espaco,data,hora_inicio,hora_fim")) {
+                     System.err.println("Arquivo agendamentos.csv está vazio ou com cabeçalho inválido. Tratando como lista vazia.");
+                     return agendamentos;
+                }
+            }
+            // Se o cabeçalho estiver lá mas não for o esperado, a lógica acima já retorna.
+            // Se for o esperado, o loop while abaixo não será afetado negativamente.
+
 
             while ((linha = br.readLine()) != null) {
                 if (linha.trim().isEmpty()) continue;
