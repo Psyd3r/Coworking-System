@@ -45,6 +45,10 @@ public class TelaPrincipalUI extends JFrame {
     private java.util.List<Espaco> listaDeEspacos; // Lista para armazenar os espaços
     private java.util.List<Agendamento> listaDeAgendamentos; // Lista para armazenar os agendamentos
 
+    // Constantes para nomes de arquivos CSV
+    private static final String ARQUIVO_ESPACOS_CSV = "demo/espacos.csv";
+    private static final String ARQUIVO_AGENDAMENTOS_CSV = "demo/agendamentos.csv";
+
     // Campos para os controles da aba Agendamentos
     private JComboBox<Espaco> comboBoxEspacosAgendamento;
     private JFormattedTextField campoDataAgendamento;
@@ -110,8 +114,13 @@ public class TelaPrincipalUI extends JFrame {
         this.iconeAgendas = loadIcon("calendar-day.png");
 
         // Inicializar a lista de espaços
-        this.listaDeEspacos = new java.util.ArrayList<>();
-        this.listaDeAgendamentos = new java.util.ArrayList<>(); // Inicializar lista de agendamentos
+        this.listaDeEspacos = new java.util.ArrayList<>(); // Já existia
+        this.listaDeAgendamentos = new java.util.ArrayList<>(); // Já existia
+
+        // Carregar dados dos CSVs
+        this.listaDeEspacos = GerenciadorCSVDados.carregarEspacosDoCSV(ARQUIVO_ESPACOS_CSV);
+        // Para carregar agendamentos, precisamos da lista de espaços já carregada para associar os IDs.
+        this.listaDeAgendamentos = GerenciadorCSVDados.carregarAgendamentosDoCSV(ARQUIVO_AGENDAMENTOS_CSV, this.listaDeEspacos);
 
         // Dados de exemplo (para teste) - Remova ou comente em produção
         // this.listaDeEspacos.add(new Espaco("Sala Alpha", 10, "Projetor, AC"));
@@ -324,6 +333,10 @@ public class TelaPrincipalUI extends JFrame {
 
                     atualizarTabelaEspacos();
                     System.out.println("Espaço salvo/atualizado: " + espacoSalvo.getNome());
+
+                    // Adicionar chamada para salvar no CSV:
+                    GerenciadorCSVDados.salvarEspacosNoCSV(ARQUIVO_ESPACOS_CSV, this.listaDeEspacos);
+
                 } else {
                     System.out.println("Criação de novo espaço cancelada ou diálogo fechado sem salvar.");
                 }
@@ -499,6 +512,7 @@ public class TelaPrincipalUI extends JFrame {
                 // O objeto espacoParaEditar já foi modificado dentro do FormularioEspacoDialog
                 // se o usuário salvou. A listaDeEspacos já contém a referência modificada.
                 atualizarTabelaEspacos();
+                GerenciadorCSVDados.salvarEspacosNoCSV(ARQUIVO_ESPACOS_CSV, this.listaDeEspacos); // Salvar após editar
                 System.out.println("Espaço editado: " + espacoEditado.getNome());
             } else {
                 System.out.println("Edição de espaço cancelada.");
@@ -522,6 +536,7 @@ public class TelaPrincipalUI extends JFrame {
             if (confirmacao == JOptionPane.YES_OPTION) {
                 listaDeEspacos.remove(linhaModelo);
                 atualizarTabelaEspacos();
+                GerenciadorCSVDados.salvarEspacosNoCSV(ARQUIVO_ESPACOS_CSV, this.listaDeEspacos); // Salvar após excluir
                 System.out.println("Espaço excluído: " + espacoParaExcluir.getNome());
             } else {
                 System.out.println("Exclusão de espaço cancelada.");
@@ -693,19 +708,19 @@ public class TelaPrincipalUI extends JFrame {
             Calendar cal = Calendar.getInstance();
             cal.setTime(dataSelecionada);
 
-            Calendar calInicioAgendamento = Calendar.getInstance();
-            calInicioAgendamento.setTime(horaInicioSelecionada);
-            calInicioAgendamento.set(Calendar.YEAR, cal.get(Calendar.YEAR));
-            calInicioAgendamento.set(Calendar.MONTH, cal.get(Calendar.MONTH));
-            calInicioAgendamento.set(Calendar.DAY_OF_MONTH, cal.get(Calendar.DAY_OF_MONTH));
-            Date horaInicioFinal = calInicioAgendamento.getTime();
+            Calendar calInicio = Calendar.getInstance();
+            calInicio.setTime(horaInicioSelecionada);
+            calInicio.set(Calendar.YEAR, cal.get(Calendar.YEAR));
+            calInicio.set(Calendar.MONTH, cal.get(Calendar.MONTH));
+            calInicio.set(Calendar.DAY_OF_MONTH, cal.get(Calendar.DAY_OF_MONTH));
+            Date horaInicioFinal = calInicio.getTime();
 
-            Calendar calFimAgendamento = Calendar.getInstance();
-            calFimAgendamento.setTime(horaFimSelecionada);
-            calFimAgendamento.set(Calendar.YEAR, cal.get(Calendar.YEAR));
-            calFimAgendamento.set(Calendar.MONTH, cal.get(Calendar.MONTH));
-            calFimAgendamento.set(Calendar.DAY_OF_MONTH, cal.get(Calendar.DAY_OF_MONTH));
-            Date horaFimFinal = calFimAgendamento.getTime();
+            Calendar calFim = Calendar.getInstance();
+            calFim.setTime(horaFimSelecionada);
+            calFim.set(Calendar.YEAR, cal.get(Calendar.YEAR));
+            calFim.set(Calendar.MONTH, cal.get(Calendar.MONTH));
+            calFim.set(Calendar.DAY_OF_MONTH, cal.get(Calendar.DAY_OF_MONTH));
+            Date horaFimFinal = calFim.getTime();
 
             if (horaFimFinal.before(horaInicioFinal) || horaFimFinal.equals(horaInicioFinal)) {
                 JOptionPane.showMessageDialog(TelaPrincipalUI.this, "A hora de fim deve ser posterior à hora de início.", "Erro de Validação", JOptionPane.ERROR_MESSAGE);
@@ -735,6 +750,9 @@ public class TelaPrincipalUI extends JFrame {
             atualizarTabelaAgendamentos();
 
             JOptionPane.showMessageDialog(TelaPrincipalUI.this, "Agendamento adicionado com sucesso!", "Sucesso", JOptionPane.INFORMATION_MESSAGE);
+
+            // Adicionar chamada para salvar no CSV:
+            GerenciadorCSVDados.salvarAgendamentosNoCSV(ARQUIVO_AGENDAMENTOS_CSV, this.listaDeAgendamentos);
 
             // Limpar campos (opcional)
             // this.campoDataAgendamento.setValue(null); // JFormattedTextField pode precisar de setText("")
@@ -886,6 +904,7 @@ public class TelaPrincipalUI extends JFrame {
             if (confirmacao == JOptionPane.YES_OPTION) {
                 listaDeAgendamentos.remove(linhaModelo);
                 atualizarTabelaAgendamentos(); // Método que já repopula a tabela
+                GerenciadorCSVDados.salvarAgendamentosNoCSV(ARQUIVO_AGENDAMENTOS_CSV, this.listaDeAgendamentos); // Salvar após remover
                 System.out.println("Agendamento removido.");
             } else {
                 System.out.println("Remoção de agendamento cancelada.");

@@ -8,6 +8,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.StringJoiner; // Importação adicionada
 import java.util.Calendar; // Importação adicionada
+import javax.swing.JOptionPane; // Importação para JOptionPane
 
 public class GerenciadorCSVDados {
 
@@ -90,7 +91,13 @@ public class GerenciadorCSVDados {
             }
         } catch (IOException e) {
             System.err.println("Erro ao ler o arquivo de espaços CSV: " + e.getMessage());
-            // Considerar lançar uma exceção customizada ou notificar o usuário
+            e.printStackTrace(); // Manter para debug
+            JOptionPane.showMessageDialog(null,
+                                          "Ocorreu um erro ao tentar carregar os dados dos espaços.\n" +
+                                          "Verifique o console para mais detalhes.\n" +
+                                          "Detalhes: " + e.getMessage(),
+                                          "Erro de Leitura de Dados",
+                                          JOptionPane.ERROR_MESSAGE);
         }
         return espacos;
     }
@@ -112,7 +119,13 @@ public class GerenciadorCSVDados {
             }
         } catch (IOException e) {
             System.err.println("Erro ao salvar o arquivo de espaços CSV: " + e.getMessage());
-            // Considerar lançar uma exceção customizada ou notificar o usuário
+            e.printStackTrace(); // Manter para debug
+            JOptionPane.showMessageDialog(null,
+                                          "Ocorreu um erro ao tentar salvar os dados dos espaços.\n" +
+                                          "Verifique as permissões do arquivo ou o espaço em disco.\n" +
+                                          "Detalhes: " + e.getMessage(),
+                                          "Erro de Persistência",
+                                          JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -215,6 +228,13 @@ public class GerenciadorCSVDados {
             }
         } catch (IOException e) {
             System.err.println("Erro ao ler o arquivo de agendamentos CSV: " + e.getMessage());
+            e.printStackTrace(); // Manter para debug
+            JOptionPane.showMessageDialog(null,
+                                          "Ocorreu um erro ao tentar carregar os dados dos agendamentos.\n" +
+                                          "Verifique o console para mais detalhes.\n" +
+                                          "Detalhes: " + e.getMessage(),
+                                          "Erro de Leitura de Dados",
+                                          JOptionPane.ERROR_MESSAGE);
         }
         return agendamentos;
     }
@@ -236,6 +256,13 @@ public class GerenciadorCSVDados {
             }
         } catch (IOException e) {
             System.err.println("Erro ao salvar o arquivo de agendamentos CSV: " + e.getMessage());
+            e.printStackTrace(); // Manter para debug
+            JOptionPane.showMessageDialog(null,
+                                          "Ocorreu um erro ao tentar salvar os dados dos agendamentos.\n" +
+                                          "Verifique as permissões do arquivo ou o espaço em disco.\n" +
+                                          "Detalhes: " + e.getMessage(),
+                                          "Erro de Persistência",
+                                          JOptionPane.ERROR_MESSAGE);
         }
     }
 
