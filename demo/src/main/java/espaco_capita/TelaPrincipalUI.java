@@ -8,6 +8,14 @@ import java.io.File; // Importação para o método loadIcon
 import javax.swing.BoxLayout; // Importação para BoxLayout
 import javax.swing.Box; // Importação para Box
 import java.awt.Component; // Importação para Component.LEFT_ALIGNMENT
+import java.awt.CardLayout; // Importação para CardLayout
+import javax.swing.JTable; // Importação para JTable
+import javax.swing.JScrollPane; // Importação para JScrollPane
+import javax.swing.table.DefaultTableModel; // Importação para DefaultTableModel
+import javax.swing.ListSelectionModel; // Importação para ListSelectionModel
+import java.util.List; // Importação para List
+import java.util.ArrayList; // Importação para ArrayList
+import javax.swing.JOptionPane; // Importação para JOptionPane
 
 public class TelaPrincipalUI extends JFrame {
 
@@ -21,6 +29,9 @@ public class TelaPrincipalUI extends JFrame {
     // Ícones para as abas
     private ImageIcon iconeEspacos;
     private ImageIcon iconeAgendas;
+    private JPanel painelConteudo; // Adicionado como campo da classe
+    private DefaultTableModel modeloTabelaEspacos; // Adicionado para a tabela de espaços
+    private java.util.List<Espaco> listaDeEspacos; // Lista para armazenar os espaços
 
     public TelaPrincipalUI() {
         setTitle("Espaço Capital - Sistema de Agendamento");
@@ -80,6 +91,14 @@ public class TelaPrincipalUI extends JFrame {
         this.iconeEspacos = loadIcon("user.png");
         this.iconeAgendas = loadIcon("calendar-day.png");
 
+        // Inicializar a lista de espaços
+        this.listaDeEspacos = new java.util.ArrayList<>();
+
+        // Dados de exemplo (para teste) - Remova ou comente em produção
+        // this.listaDeEspacos.add(new Espaco("Sala Alpha", 10, "Projetor, AC"));
+        // this.listaDeEspacos.add(new Espaco("Sala Beta", 5, "Quadro branco"));
+
+
         // Carregar o ícone do logo
         ImageIcon logoEmpresaIcon = loadIcon("logo.PNG"); // Carrega demo/src/main/resources/logo.PNG
 
@@ -102,6 +121,41 @@ public class TelaPrincipalUI extends JFrame {
 
         configurarBotaoSidebar(abaEspacosSidebar, this.iconeEspacos); // Usando this.iconeEspacos
         configurarBotaoSidebar(abaAgendasSidebar, this.iconeAgendas); // Usando this.iconeAgendas
+
+        abaEspacosSidebar.addActionListener(e -> {
+            // Verifica se o painel já existe no CardLayout
+            boolean painelJaExiste = false;
+            for (Component comp : painelConteudo.getComponents()) {
+                if (comp.getName() != null && comp.getName().equals("painelEspacos")) {
+                    painelJaExiste = true;
+                    break;
+                }
+            }
+
+            if (!painelJaExiste) {
+                JPanel novoPainelEspacos = criarPainelEspacos();
+                novoPainelEspacos.setName("painelEspacos"); // Define um nome para o painel
+                this.painelConteudo.add(novoPainelEspacos, "painelEspacos");
+            }
+            ((CardLayout) this.painelConteudo.getLayout()).show(this.painelConteudo, "painelEspacos");
+        });
+
+        abaAgendasSidebar.addActionListener(e -> {
+            boolean painelJaExiste = false;
+            for (Component comp : painelConteudo.getComponents()) {
+                if (comp.getName() != null && comp.getName().equals("painelAgendas")) {
+                    painelJaExiste = true;
+                    break;
+                }
+            }
+
+            if (!painelJaExiste) {
+                JPanel novoPainelAgendas = criarPainelAgendas();
+                novoPainelAgendas.setName("painelAgendas");
+                this.painelConteudo.add(novoPainelAgendas, "painelAgendas");
+            }
+            ((CardLayout) this.painelConteudo.getLayout()).show(this.painelConteudo, "painelAgendas");
+        });
 
         // Alinhar botões à esquerda e garantir que ocupem a largura
         abaEspacosSidebar.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -151,19 +205,303 @@ public class TelaPrincipalUI extends JFrame {
         painelPrincipal.add(painelNavbar, BorderLayout.NORTH);
 
         // Área de Conteúdo Principal
-        JPanel painelConteudo = new JPanel(new BorderLayout()); // Usar BorderLayout para flexibilidade
-        painelConteudo.setBackground(BRANCO); // Cor de fundo padrão
-        painelConteudo.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10)); // Padding
+        this.painelConteudo = new JPanel(new CardLayout()); // MUDAR PARA CARDLAYOUT
+        this.painelConteudo.setBackground(BRANCO); // Cor de fundo padrão
+        this.painelConteudo.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10)); // Padding
 
-        // Placeholder - este painel será substituído pelo conteúdo da aba selecionada
-        JLabel labelConteudo = new JLabel("Área de Conteúdo Principal - Selecione uma aba", SwingConstants.CENTER);
-        labelConteudo.setFont(new Font("Segoe UI", Font.PLAIN, 18));
-        labelConteudo.setForeground(CINZA_ESCURO);
-        painelConteudo.add(labelConteudo, BorderLayout.CENTER);
+        // Adicionar um painel inicial/default ao painelConteudo
+        JPanel painelDefault = new JPanel(new BorderLayout());
+        painelDefault.setBackground(BRANCO);
+        JLabel labelDefault = new JLabel("Bem-vindo! Selecione uma opção na barra lateral.", SwingConstants.CENTER);
+        labelDefault.setFont(new Font("Segoe UI", Font.PLAIN, 18));
+        labelDefault.setForeground(CINZA_ESCURO);
+        painelDefault.add(labelDefault, BorderLayout.CENTER);
+        this.painelConteudo.add(painelDefault, "painelDefault"); // Adiciona com um nome
 
-        painelPrincipal.add(painelConteudo, BorderLayout.CENTER);
+        // ((CardLayout) this.painelConteudo.getLayout()).show(this.painelConteudo, "painelDefault"); // Mostra o default
+        painelPrincipal.add(this.painelConteudo, BorderLayout.CENTER);
+
 
         // Mais componentes serão adicionados aqui nos próximos passos
+    }
+
+    private JPanel criarPainelEspacos() {
+        JPanel painel = new JPanel(new BorderLayout());
+        painel.setBackground(BRANCO); // Cor de fundo para o painel de espaços
+        painel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
+        JLabel tituloEspacos = new JLabel("Gerenciamento de Espaços", SwingConstants.CENTER);
+        tituloEspacos.setFont(new Font("Segoe UI", Font.BOLD, 22));
+        tituloEspacos.setForeground(PRETO_SUAVE);
+        tituloEspacos.setBorder(BorderFactory.createEmptyBorder(0, 0, 15, 0)); // Margem inferior
+        painel.add(tituloEspacos, BorderLayout.NORTH);
+
+        // Painel para agrupar botões de ação e a tabela
+        JPanel painelCentralEspacos = new JPanel(new BorderLayout(0, 10)); // Espaçamento vertical de 10px
+        painelCentralEspacos.setOpaque(false); // Transparente para herdar cor do painel principal da aba
+
+        // Painel para o botão "Novo Espaço"
+        JPanel painelBotoesAcao = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0)); // Alinhado à esquerda
+        painelBotoesAcao.setOpaque(false);
+
+        JButton botaoNovoEspaco = new JButton("Novo Espaço");
+        botaoNovoEspaco.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        botaoNovoEspaco.setForeground(BRANCO);
+        botaoNovoEspaco.setBackground(VERDE_PRINCIPAL); // Usando a cor verde principal
+        botaoNovoEspaco.setOpaque(true); // Precisa ser opaco para a cor de fundo aparecer
+        botaoNovoEspaco.setBorderPainted(false); // Para um look mais moderno
+        botaoNovoEspaco.setFocusPainted(false);
+        botaoNovoEspaco.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        botaoNovoEspaco.setMargin(new Insets(8, 15, 8, 15)); // Padding interno
+
+        // Efeito hover para o botão Novo Espaço
+        botaoNovoEspaco.addMouseListener(new java.awt.event.MouseAdapter() {
+            Color originalColor = botaoNovoEspaco.getBackground();
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                botaoNovoEspaco.setBackground(originalColor.brighter());
+            }
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                botaoNovoEspaco.setBackground(originalColor);
+            }
+        });
+
+        botaoNovoEspaco.addActionListener(e -> {
+            FormularioEspacoDialog dialogoNovoEspaco = new FormularioEspacoDialog(
+                TelaPrincipalUI.this, // Passa a instância da JFrame principal como pai
+                "Adicionar Novo Espaço",
+                null // Passa null para espacoParaEditar, indicando que é um novo espaço
+            );
+            dialogoNovoEspaco.setVisible(true);
+
+            // Após o diálogo ser fechado (setVisible(true) é bloqueante para dialogs modais):
+            Espaco espacoSalvo = dialogoNovoEspaco.getEspacoSalvo();
+
+            if (espacoSalvo != null) {
+                // Verificar se o nome não está vazio (o dialog já faz uma validação, mas podemos reforçar)
+                // e se o espaco foi realmente modificado ou é novo (o getEspacoSalvo() atual não distingue cancelamento)
+                // Para uma lógica mais robusta, FormularioEspacoDialog precisaria de um método
+                // tipo 'foiSalvoComSucesso()' para distinguir entre salvar e cancelar/fechar.
+                // O getEspacoSalvo() atual retorna o objeto mesmo se o usuário fechar o dialog sem salvar,
+                // se ele foi preenchido anteriormente (no caso de edição, por exemplo).
+                // A lógica exata de quando adicionar/atualizar pode ser refinada.
+
+                if (espacoSalvo != null) { // espacoSalvo agora só retorna não-null se foi salvo com sucesso
+                    // Checar se já existe um espaço com o mesmo ID (para caso de edição futura)
+                    boolean jaExiste = false;
+                    for(Espaco es : listaDeEspacos) {
+                        if(es.getId().equals(espacoSalvo.getId())) {
+                            jaExiste = true;
+                            // Atualiza o existente - essa lógica será mais relevante no "Editar"
+                            es.setNome(espacoSalvo.getNome());
+                            es.setCapacidade(espacoSalvo.getCapacidade());
+                            es.setDescricao(espacoSalvo.getDescricao());
+                            break;
+                        }
+                    }
+
+                    if (!jaExiste) {
+                        this.listaDeEspacos.add(espacoSalvo);
+                    }
+
+                    atualizarTabelaEspacos();
+                    System.out.println("Espaço salvo/atualizado: " + espacoSalvo.getNome());
+                } else {
+                    System.out.println("Criação de novo espaço cancelada ou diálogo fechado sem salvar.");
+                }
+            } else { // Se o diálogo não foi salvo com sucesso (isSalvoComSucesso() == false)
+                 System.out.println("Criação de novo espaço cancelada ou diálogo fechado sem salvar.");
+            }
+        });
+
+        painelBotoesAcao.add(botaoNovoEspaco);
+        painelCentralEspacos.add(painelBotoesAcao, BorderLayout.NORTH);
+
+        // Tabela para listar espaços
+        String[] colunasTabela = {"Nome", "Capacidade", "Descrição", "Ações"}; // Coluna "Ações" adicionada para botões
+        this.modeloTabelaEspacos = new DefaultTableModel(colunasTabela, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                // Apenas a coluna "Ações" (onde estão os botões) deve ser "editável"
+                // para ativar o TableCellEditor.
+                return column == (colunasTabela.length - 1); // Se "Ações" for a última coluna
+            }
+            // Adicionar override para getClass para a coluna de ações, se necessário (para o renderer funcionar corretamente)
+            // @Override
+            // public Class<?> getColumnClass(int columnIndex) {
+            //     if (columnIndex == (colunasTabela.length - 1)) {
+            //         return AcoesTabelaPanel.class; // Ou Object.class se o painel for genérico
+            //     }
+            //     return super.getColumnClass(columnIndex);
+            // }
+        };
+        JTable tabelaEspacos = new JTable(this.modeloTabelaEspacos);
+
+        // Estilização da tabela (opcional, mas recomendado)
+        tabelaEspacos.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        tabelaEspacos.setRowHeight(30); // Altura da linha
+        tabelaEspacos.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 15));
+        tabelaEspacos.getTableHeader().setBackground(CINZA_CLARO); // Cor do cabeçalho
+        tabelaEspacos.getTableHeader().setForeground(PRETO_SUAVE);
+        tabelaEspacos.setFillsViewportHeight(true); // Para que a tabela preencha a altura do JScrollPane
+        tabelaEspacos.setSelectionMode(ListSelectionModel.SINGLE_SELECTION); // Apenas uma linha pode ser selecionada
+
+        // Configurar a coluna "Ações" para usar o renderer e editor customizados
+        int indiceColunaAcoes = this.modeloTabelaEspacos.getColumnCount() - 1; // Assume que "Ações" é a última
+        if (indiceColunaAcoes >= 0 && this.modeloTabelaEspacos.getColumnName(indiceColunaAcoes).equals("Ações")) {
+            AcoesTabelaCellRendererEditor rendererEditor = new AcoesTabelaCellRendererEditor(tabelaEspacos);
+            tabelaEspacos.getColumnModel().getColumn(indiceColunaAcoes).setCellRenderer(rendererEditor);
+            tabelaEspacos.getColumnModel().getColumn(indiceColunaAcoes).setCellEditor(rendererEditor);
+
+            // Definir largura preferida para a coluna de ações
+            tabelaEspacos.getColumnModel().getColumn(indiceColunaAcoes).setPreferredWidth(130); // Ajuste conforme necessário
+            tabelaEspacos.getColumnModel().getColumn(indiceColunaAcoes).setMinWidth(120);
+            tabelaEspacos.getColumnModel().getColumn(indiceColunaAcoes).setMaxWidth(150);
+
+
+            // Adicionar ActionListeners específicos para os botões do editor
+            rendererEditor.addActionListenerParaEditar(e -> {
+                int linhaSelecionadaVisual = tabelaEspacos.getSelectedRow();
+                if (linhaSelecionadaVisual != -1) {
+                    int linhaModelo = tabelaEspacos.convertRowIndexToModel(linhaSelecionadaVisual);
+                    editarEspaco(linhaModelo);
+                } else {
+                    // Se nenhuma linha estiver selecionada, mas o botão foi clicado (pode acontecer se a edição for iniciada de outra forma)
+                    // Tenta obter a linha que está sendo editada.
+                    int linhaEditando = tabelaEspacos.getEditingRow();
+                    if (linhaEditando != -1) {
+                         int linhaModelo = tabelaEspacos.convertRowIndexToModel(linhaEditando);
+                         editarEspaco(linhaModelo);
+                    } else {
+                        JOptionPane.showMessageDialog(TelaPrincipalUI.this,
+                                                    "Por favor, selecione um espaço para editar.",
+                                                    "Aviso", JOptionPane.WARNING_MESSAGE);
+                    }
+                }
+            });
+
+            rendererEditor.addActionListenerParaExcluir(e -> {
+                int linhaSelecionadaVisual = tabelaEspacos.getSelectedRow();
+                if (linhaSelecionadaVisual != -1) {
+                    int linhaModelo = tabelaEspacos.convertRowIndexToModel(linhaSelecionadaVisual);
+                    excluirEspaco(linhaModelo);
+                } else {
+                    int linhaEditando = tabelaEspacos.getEditingRow();
+                     if (linhaEditando != -1) {
+                         int linhaModelo = tabelaEspacos.convertRowIndexToModel(linhaEditando);
+                         excluirEspaco(linhaModelo);
+                    } else {
+                        JOptionPane.showMessageDialog(TelaPrincipalUI.this,
+                                                    "Por favor, selecione um espaço para excluir.",
+                                                    "Aviso", JOptionPane.WARNING_MESSAGE);
+                    }
+                }
+            });
+        }
+
+        // Adicionar dados de exemplo (remover ou comentar depois)
+        // modeloTabelaEspacos.addRow(new Object[]{"Sala de Reunião A", 10, "Equipada com projetor e quadro branco", "Editar/Excluir"});
+        // modeloTabelaEspacos.addRow(new Object[]{"Sala de Coworking B", 25, "Ambiente compartilhado com mesas individuais", "Editar/Excluir"});
+        // modeloTabelaEspacos.addRow(new Object[]{"Auditório", 100, "Grande espaço para eventos e palestras", "Editar/Excluir"});
+
+        JScrollPane scrollPaneTabela = new JScrollPane(tabelaEspacos);
+        painelCentralEspacos.add(scrollPaneTabela, BorderLayout.CENTER); // Adiciona a tabela ao painelCentralEspacos
+
+        // Adicionar o painelCentralEspacos ao painel principal da aba Espaços
+        painel.add(painelCentralEspacos, BorderLayout.CENTER);
+
+        // Atualizar a tabela ao criar o painel pela primeira vez (se houver dados de exemplo)
+        // Isso garante que os dados de exemplo sejam exibidos.
+        // Se não houver dados de exemplo, a tabela estará vazia, o que é correto.
+        atualizarTabelaEspacos();
+
+        return painel;
+    }
+
+    private void atualizarTabelaEspacos() {
+        // Limpar tabela existente
+        if (this.modeloTabelaEspacos == null) {
+            // Isso não deveria acontecer se criarPainelEspacos() foi chamado e inicializou o modelo
+            System.err.println("modeloTabelaEspacos ainda não foi inicializado!");
+            return;
+        }
+        this.modeloTabelaEspacos.setRowCount(0);
+
+        // Preencher com dados da listaDeEspacos
+        for (Espaco espaco : this.listaDeEspacos) {
+            // A coluna "Ações" terá botões, por enquanto pode ser um placeholder ou null
+            this.modeloTabelaEspacos.addRow(new Object[]{ // Nova Linha
+                espaco.getNome(),
+                espaco.getCapacidade(),
+                espaco.getDescricao(),
+                null // Ou um objeto placeholder se o editor/renderer precisar, mas null geralmente funciona.
+            });
+        }
+    }
+
+    private void editarEspaco(int linhaModelo) {
+        if (linhaModelo >= 0 && linhaModelo < listaDeEspacos.size()) {
+            Espaco espacoParaEditar = listaDeEspacos.get(linhaModelo);
+
+            FormularioEspacoDialog dialogoEditarEspaco = new FormularioEspacoDialog(
+                TelaPrincipalUI.this,
+                "Editar Espaço: " + espacoParaEditar.getNome(),
+                espacoParaEditar // Passa o objeto Espaco existente
+            );
+            dialogoEditarEspaco.setVisible(true);
+
+            Espaco espacoEditado = dialogoEditarEspaco.getEspacoSalvo();
+            if (dialogoEditarEspaco.isSalvoComSucesso() && espacoEditado != null) {
+                // O objeto espacoParaEditar já foi modificado dentro do FormularioEspacoDialog
+                // se o usuário salvou. A listaDeEspacos já contém a referência modificada.
+                atualizarTabelaEspacos();
+                System.out.println("Espaço editado: " + espacoEditado.getNome());
+            } else {
+                System.out.println("Edição de espaço cancelada.");
+            }
+        } else {
+            System.err.println("Índice de linha inválido para edição: " + linhaModelo);
+        }
+    }
+
+    private void excluirEspaco(int linhaModelo) {
+        if (linhaModelo >= 0 && linhaModelo < listaDeEspacos.size()) {
+            Espaco espacoParaExcluir = listaDeEspacos.get(linhaModelo);
+            int confirmacao = JOptionPane.showConfirmDialog(
+                TelaPrincipalUI.this,
+                "Tem certeza que deseja excluir o espaço: " + espacoParaExcluir.getNome() + "?",
+                "Confirmar Exclusão",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.WARNING_MESSAGE
+            );
+
+            if (confirmacao == JOptionPane.YES_OPTION) {
+                listaDeEspacos.remove(linhaModelo);
+                atualizarTabelaEspacos();
+                System.out.println("Espaço excluído: " + espacoParaExcluir.getNome());
+            } else {
+                System.out.println("Exclusão de espaço cancelada.");
+            }
+        } else {
+            System.err.println("Índice de linha inválido para exclusão: " + linhaModelo);
+        }
+    }
+
+    private JPanel criarPainelAgendas() {
+        JPanel painel = new JPanel(new BorderLayout());
+        painel.setBackground(BRANCO);
+        painel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
+        JLabel tituloAgendas = new JLabel("Gerenciamento de Agendas", SwingConstants.CENTER);
+        tituloAgendas.setFont(new Font("Segoe UI", Font.BOLD, 22));
+        tituloAgendas.setForeground(PRETO_SUAVE);
+        tituloAgendas.setBorder(BorderFactory.createEmptyBorder(0, 0, 15, 0));
+        painel.add(tituloAgendas, BorderLayout.NORTH);
+
+        JLabel placeholderConteudo = new JLabel("Conteúdo da Aba Agendas em breve...", SwingConstants.CENTER);
+        placeholderConteudo.setFont(new Font("Segoe UI", Font.PLAIN, 16));
+        painel.add(placeholderConteudo, BorderLayout.CENTER);
+
+        return painel;
     }
 
     private void configurarBotaoSidebar(JButton botao, ImageIcon icone) {
