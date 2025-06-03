@@ -301,46 +301,29 @@ public class TelaPrincipalUI extends JFrame {
             );
             dialogoNovoEspaco.setVisible(true);
 
-            // Após o diálogo ser fechado (setVisible(true) é bloqueante para dialogs modais):
             Espaco espacoSalvo = dialogoNovoEspaco.getEspacoSalvo();
 
             if (espacoSalvo != null) {
-                // Verificar se o nome não está vazio (o dialog já faz uma validação, mas podemos reforçar)
-                // e se o espaco foi realmente modificado ou é novo (o getEspacoSalvo() atual não distingue cancelamento)
-                // Para uma lógica mais robusta, FormularioEspacoDialog precisaria de um método
-                // tipo 'foiSalvoComSucesso()' para distinguir entre salvar e cancelar/fechar.
-                // O getEspacoSalvo() atual retorna o objeto mesmo se o usuário fechar o dialog sem salvar,
-                // se ele foi preenchido anteriormente (no caso de edição, por exemplo).
-                // A lógica exata de quando adicionar/atualizar pode ser refinada.
-
-                if (espacoSalvo != null) { // espacoSalvo agora só retorna não-null se foi salvo com sucesso
-                    // Checar se já existe um espaço com o mesmo ID (para caso de edição futura)
-                    boolean jaExiste = false;
-                    for(Espaco es : listaDeEspacos) {
-                        if(es.getId().equals(espacoSalvo.getId())) {
-                            jaExiste = true;
-                            // Atualiza o existente - essa lógica será mais relevante no "Editar"
-                            es.setNome(espacoSalvo.getNome());
-                            es.setCapacidade(espacoSalvo.getCapacidade());
-                            es.setDescricao(espacoSalvo.getDescricao());
-                            break;
-                        }
+                boolean jaExiste = false;
+                for(Espaco es : listaDeEspacos) {
+                    if(es.getId().equals(espacoSalvo.getId())) {
+                        jaExiste = true;
+                        es.setNome(espacoSalvo.getNome());
+                        es.setCapacidade(espacoSalvo.getCapacidade());
+                        es.setDescricao(espacoSalvo.getDescricao());
+                        break;
                     }
-
-                    if (!jaExiste) {
-                        this.listaDeEspacos.add(espacoSalvo);
-                    }
-
-                    atualizarTabelaEspacos();
-                    System.out.println("Espaço salvo/atualizado: " + espacoSalvo.getNome());
-
-                    // Adicionar chamada para salvar no CSV:
-                    GerenciadorCSVDados.salvarEspacosNoCSV(ARQUIVO_ESPACOS_CSV, this.listaDeEspacos);
-
-                } else {
-                    System.out.println("Criação de novo espaço cancelada ou diálogo fechado sem salvar.");
                 }
-            } else { // Se o diálogo não foi salvo com sucesso (isSalvoComSucesso() == false)
+
+                if (!jaExiste) {
+                    this.listaDeEspacos.add(espacoSalvo);
+                }
+
+                atualizarTabelaEspacos();
+                System.out.println("Espaço salvo/atualizado: " + espacoSalvo.getNome());
+                GerenciadorCSVDados.salvarEspacosNoCSV(ARQUIVO_ESPACOS_CSV, this.listaDeEspacos);
+                atualizarComboBoxEspacosAgendamento();
+            } else {
                  System.out.println("Criação de novo espaço cancelada ou diálogo fechado sem salvar.");
             }
         });
@@ -348,57 +331,39 @@ public class TelaPrincipalUI extends JFrame {
         painelBotoesAcao.add(botaoNovoEspaco);
         painelCentralEspacos.add(painelBotoesAcao, BorderLayout.NORTH);
 
-        // Tabela para listar espaços
-        String[] colunasTabela = {"Nome", "Capacidade", "Descrição", "Ações"}; // Coluna "Ações" adicionada para botões
+        String[] colunasTabela = {"Nome", "Capacidade", "Descrição", "Ações"};
         this.modeloTabelaEspacos = new DefaultTableModel(colunasTabela, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
-                // Apenas a coluna "Ações" (onde estão os botões) deve ser "editável"
-                // para ativar o TableCellEditor.
-                return column == (colunasTabela.length - 1); // Se "Ações" for a última coluna
+                return column == (colunasTabela.length - 1);
             }
-            // Adicionar override para getClass para a coluna de ações, se necessário (para o renderer funcionar corretamente)
-            // @Override
-            // public Class<?> getColumnClass(int columnIndex) {
-            //     if (columnIndex == (colunasTabela.length - 1)) {
-            //         return AcoesTabelaPanel.class; // Ou Object.class se o painel for genérico
-            //     }
-            //     return super.getColumnClass(columnIndex);
-            // }
         };
         JTable tabelaEspacos = new JTable(this.modeloTabelaEspacos);
 
-        // Estilização da tabela (opcional, mas recomendado)
         tabelaEspacos.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        tabelaEspacos.setRowHeight(36); // Nova altura da linha (ex: 30 para o botão + 6 de padding vertical)
+        tabelaEspacos.setRowHeight(36);
         tabelaEspacos.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 15));
-        tabelaEspacos.getTableHeader().setBackground(CINZA_CLARO); // Cor do cabeçalho
+        tabelaEspacos.getTableHeader().setBackground(CINZA_CLARO);
         tabelaEspacos.getTableHeader().setForeground(PRETO_SUAVE);
-        tabelaEspacos.setFillsViewportHeight(true); // Para que a tabela preencha a altura do JScrollPane
-        tabelaEspacos.setSelectionMode(ListSelectionModel.SINGLE_SELECTION); // Apenas uma linha pode ser selecionada
+        tabelaEspacos.setFillsViewportHeight(true);
+        tabelaEspacos.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
-        // Configurar a coluna "Ações" para usar o renderer e editor customizados
-        int indiceColunaAcoes = this.modeloTabelaEspacos.getColumnCount() - 1; // Assume que "Ações" é a última
+        int indiceColunaAcoes = this.modeloTabelaEspacos.getColumnCount() - 1;
         if (indiceColunaAcoes >= 0 && this.modeloTabelaEspacos.getColumnName(indiceColunaAcoes).equals("Ações")) {
             AcoesTabelaCellRendererEditor rendererEditor = new AcoesTabelaCellRendererEditor(tabelaEspacos);
             tabelaEspacos.getColumnModel().getColumn(indiceColunaAcoes).setCellRenderer(rendererEditor);
             tabelaEspacos.getColumnModel().getColumn(indiceColunaAcoes).setCellEditor(rendererEditor);
 
-            // Definir largura preferida para a coluna de ações
-            tabelaEspacos.getColumnModel().getColumn(indiceColunaAcoes).setPreferredWidth(85); // Nova largura preferida
-            tabelaEspacos.getColumnModel().getColumn(indiceColunaAcoes).setMinWidth(80);    // Nova largura mínima
-            tabelaEspacos.getColumnModel().getColumn(indiceColunaAcoes).setMaxWidth(100);   // Nova largura máxima
+            tabelaEspacos.getColumnModel().getColumn(indiceColunaAcoes).setPreferredWidth(85);
+            tabelaEspacos.getColumnModel().getColumn(indiceColunaAcoes).setMinWidth(80);
+            tabelaEspacos.getColumnModel().getColumn(indiceColunaAcoes).setMaxWidth(100);
 
-
-            // Adicionar ActionListeners específicos para os botões do editor
             rendererEditor.addActionListenerParaEditar(e -> {
                 int linhaSelecionadaVisual = tabelaEspacos.getSelectedRow();
                 if (linhaSelecionadaVisual != -1) {
                     int linhaModelo = tabelaEspacos.convertRowIndexToModel(linhaSelecionadaVisual);
                     editarEspaco(linhaModelo);
                 } else {
-                    // Se nenhuma linha estiver selecionada, mas o botão foi clicado (pode acontecer se a edição for iniciada de outra forma)
-                    // Tenta obter a linha que está sendo editada.
                     int linhaEditando = tabelaEspacos.getEditingRow();
                     if (linhaEditando != -1) {
                          int linhaModelo = tabelaEspacos.convertRowIndexToModel(linhaEditando);
@@ -430,33 +395,18 @@ public class TelaPrincipalUI extends JFrame {
             });
         }
 
-        // Adicionar dados de exemplo (remover ou comentar depois)
-        // modeloTabelaEspacos.addRow(new Object[]{"Sala de Reunião A", 10, "Equipada com projetor e quadro branco", "Editar/Excluir"});
-        // modeloTabelaEspacos.addRow(new Object[]{"Sala de Coworking B", 25, "Ambiente compartilhado com mesas individuais", "Editar/Excluir"});
-        // modeloTabelaEspacos.addRow(new Object[]{"Auditório", 100, "Grande espaço para eventos e palestras", "Editar/Excluir"});
-
         JScrollPane scrollPaneTabela = new JScrollPane(tabelaEspacos);
-        painelCentralEspacos.add(scrollPaneTabela, BorderLayout.CENTER); // Adiciona a tabela ao painelCentralEspacos
-
-        // Adicionar o painelCentralEspacos ao painel principal da aba Espaços
+        painelCentralEspacos.add(scrollPaneTabela, BorderLayout.CENTER);
         painel.add(painelCentralEspacos, BorderLayout.CENTER);
-
-        // Atualizar a tabela ao criar o painel pela primeira vez (se houver dados de exemplo)
-        // Isso garante que os dados de exemplo sejam exibidos.
-        // Se não houver dados de exemplo, a tabela estará vazia, o que é correto.
         atualizarTabelaEspacos();
-
         return painel;
     }
 
     private java.util.Date parseData(String dataStr) {
         try {
-            // Usar o formato correto que o JFormattedTextField está configurado para produzir
-            // ou o formato esperado do usuário.
             return new java.text.SimpleDateFormat("dd/MM/yyyy").parse(dataStr);
         } catch (java.text.ParseException e) {
             System.err.println("Erro ao parsear data: " + dataStr + " - " + e.getMessage());
-            // Considerar notificar o usuário via JOptionPane aqui também ou retornar null e tratar no chamador.
             return null;
         }
     }
@@ -465,7 +415,6 @@ public class TelaPrincipalUI extends JFrame {
         if (data1 == null || data2 == null) {
             return false;
         }
-        // Usar Calendar para comparar apenas ano, mês e dia.
         java.util.Calendar cal1 = java.util.Calendar.getInstance();
         cal1.setTime(data1);
         java.util.Calendar cal2 = java.util.Calendar.getInstance();
@@ -476,22 +425,17 @@ public class TelaPrincipalUI extends JFrame {
     }
 
     private void atualizarTabelaEspacos() {
-        // Limpar tabela existente
         if (this.modeloTabelaEspacos == null) {
-            // Isso não deveria acontecer se criarPainelEspacos() foi chamado e inicializou o modelo
             System.err.println("modeloTabelaEspacos ainda não foi inicializado!");
             return;
         }
         this.modeloTabelaEspacos.setRowCount(0);
-
-        // Preencher com dados da listaDeEspacos
         for (Espaco espaco : this.listaDeEspacos) {
-            // A coluna "Ações" terá botões, por enquanto pode ser um placeholder ou null
-            this.modeloTabelaEspacos.addRow(new Object[]{ // Nova Linha
+            this.modeloTabelaEspacos.addRow(new Object[]{
                 espaco.getNome(),
                 espaco.getCapacidade(),
                 espaco.getDescricao(),
-                null // Ou um objeto placeholder se o editor/renderer precisar, mas null geralmente funciona.
+                null
             });
         }
     }
@@ -503,16 +447,15 @@ public class TelaPrincipalUI extends JFrame {
             FormularioEspacoDialog dialogoEditarEspaco = new FormularioEspacoDialog(
                 TelaPrincipalUI.this,
                 "Editar Espaço: " + espacoParaEditar.getNome(),
-                espacoParaEditar // Passa o objeto Espaco existente
+                espacoParaEditar
             );
             dialogoEditarEspaco.setVisible(true);
 
             Espaco espacoEditado = dialogoEditarEspaco.getEspacoSalvo();
             if (dialogoEditarEspaco.isSalvoComSucesso() && espacoEditado != null) {
-                // O objeto espacoParaEditar já foi modificado dentro do FormularioEspacoDialog
-                // se o usuário salvou. A listaDeEspacos já contém a referência modificada.
                 atualizarTabelaEspacos();
-                GerenciadorCSVDados.salvarEspacosNoCSV(ARQUIVO_ESPACOS_CSV, this.listaDeEspacos); // Salvar após editar
+                GerenciadorCSVDados.salvarEspacosNoCSV(ARQUIVO_ESPACOS_CSV, this.listaDeEspacos);
+                atualizarComboBoxEspacosAgendamento();
                 System.out.println("Espaço editado: " + espacoEditado.getNome());
             } else {
                 System.out.println("Edição de espaço cancelada.");
@@ -536,7 +479,8 @@ public class TelaPrincipalUI extends JFrame {
             if (confirmacao == JOptionPane.YES_OPTION) {
                 listaDeEspacos.remove(linhaModelo);
                 atualizarTabelaEspacos();
-                GerenciadorCSVDados.salvarEspacosNoCSV(ARQUIVO_ESPACOS_CSV, this.listaDeEspacos); // Salvar após excluir
+                GerenciadorCSVDados.salvarEspacosNoCSV(ARQUIVO_ESPACOS_CSV, this.listaDeEspacos);
+                atualizarComboBoxEspacosAgendamento();
                 System.out.println("Espaço excluído: " + espacoParaExcluir.getNome());
             } else {
                 System.out.println("Exclusão de espaço cancelada.");
@@ -554,8 +498,6 @@ public class TelaPrincipalUI extends JFrame {
         JLabel tituloAgendas = new JLabel("Gerenciamento de Agendas", SwingConstants.CENTER);
         tituloAgendas.setFont(new Font("Segoe UI", Font.BOLD, 22));
         tituloAgendas.setForeground(PRETO_SUAVE);
-        // tituloAgendas.setBorder(BorderFactory.createEmptyBorder(0, 0, 15, 0)); // Movido para painelSuperiorAgendas
-        // painel.add(tituloAgendas, BorderLayout.NORTH); // Movido para painelSuperiorAgendas
 
         JPanel painelControlesAgendamento = new JPanel(new GridBagLayout());
         painelControlesAgendamento.setBackground(BRANCO);
@@ -566,11 +508,10 @@ public class TelaPrincipalUI extends JFrame {
             new Font("Segoe UI", Font.BOLD, 14), PRETO_SUAVE
         ));
         GridBagConstraints gbcControles = new GridBagConstraints();
-        gbcControles.insets = new Insets(5, 8, 5, 8); // Padding
+        gbcControles.insets = new Insets(5, 8, 5, 8);
         gbcControles.anchor = GridBagConstraints.WEST;
         gbcControles.fill = GridBagConstraints.HORIZONTAL;
 
-        // Seletor de Espaço (JComboBox)
         gbcControles.gridx = 0;
         gbcControles.gridy = 0;
         JLabel labelSeletorEspaco = new JLabel("Espaço:");
@@ -578,15 +519,13 @@ public class TelaPrincipalUI extends JFrame {
         painelControlesAgendamento.add(labelSeletorEspaco, gbcControles);
 
         gbcControles.gridx = 1;
-        gbcControles.gridwidth = 3; // Ocupar mais colunas
-        this.comboBoxEspacosAgendamento = new JComboBox<>(); // Atribuir ao campo da classe
-        // Popular o ComboBox com os espaços da listaDeEspacos
+        gbcControles.gridwidth = 3;
+        this.comboBoxEspacosAgendamento = new JComboBox<>();
         if (this.listaDeEspacos != null) {
             for (Espaco esp : this.listaDeEspacos) {
                 this.comboBoxEspacosAgendamento.addItem(esp);
             }
         }
-        // Customizar o renderer do ComboBox para mostrar espaco.getNome()
         this.comboBoxEspacosAgendamento.setRenderer(new DefaultListCellRenderer() {
             @Override
             public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
@@ -598,14 +537,12 @@ public class TelaPrincipalUI extends JFrame {
             }
         });
         this.comboBoxEspacosAgendamento.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        // Adicionar ActionListener para atualizar a tabela quando o espaço mudar
         this.comboBoxEspacosAgendamento.addActionListener(e -> {
             atualizarTabelaAgendamentos();
         });
         painelControlesAgendamento.add(this.comboBoxEspacosAgendamento, gbcControles);
-        gbcControles.gridwidth = 1; // Reset gridwidth
+        gbcControles.gridwidth = 1;
 
-        // Campo de Data (JFormattedTextField)
         gbcControles.gridx = 0;
         gbcControles.gridy = 1;
         JLabel labelData = new JLabel("Data (dd/mm/aaaa):");
@@ -613,20 +550,18 @@ public class TelaPrincipalUI extends JFrame {
         painelControlesAgendamento.add(labelData, gbcControles);
 
         gbcControles.gridx = 1;
-        // JFormattedTextField campoData = null; // Linha antiga
         try {
             javax.swing.text.MaskFormatter mascaraData = new javax.swing.text.MaskFormatter("##/##/####");
             mascaraData.setPlaceholderCharacter('_');
-            this.campoDataAgendamento = new JFormattedTextField(mascaraData); // Atribuir ao campo da classe
+            this.campoDataAgendamento = new JFormattedTextField(mascaraData);
             this.campoDataAgendamento.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-            this.campoDataAgendamento.setColumns(8); // Largura
+            this.campoDataAgendamento.setColumns(8);
         } catch (java.text.ParseException e) {
             e.printStackTrace();
-            this.campoDataAgendamento = new JFormattedTextField(); // Fallback
+            this.campoDataAgendamento = new JFormattedTextField();
         }
         painelControlesAgendamento.add(this.campoDataAgendamento, gbcControles);
 
-        // Campo Hora Início (JSpinner)
         gbcControles.gridx = 0;
         gbcControles.gridy = 2;
         JLabel labelHoraInicio = new JLabel("Hora Início (HH:mm):");
@@ -634,43 +569,39 @@ public class TelaPrincipalUI extends JFrame {
         painelControlesAgendamento.add(labelHoraInicio, gbcControles);
 
         gbcControles.gridx = 1;
-        this.spinnerHoraInicioAgendamento = new JSpinner(new SpinnerDateModel()); // Atribuir ao campo da classe
+        this.spinnerHoraInicioAgendamento = new JSpinner(new SpinnerDateModel());
         JSpinner.DateEditor editorHoraInicio = new JSpinner.DateEditor(this.spinnerHoraInicioAgendamento, "HH:mm");
         this.spinnerHoraInicioAgendamento.setEditor(editorHoraInicio);
         this.spinnerHoraInicioAgendamento.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        // Definir um valor inicial (ex: 08:00)
         java.util.Calendar calInicio = java.util.Calendar.getInstance();
         calInicio.set(java.util.Calendar.HOUR_OF_DAY, 8);
         calInicio.set(java.util.Calendar.MINUTE, 0);
         this.spinnerHoraInicioAgendamento.setValue(calInicio.getTime());
         painelControlesAgendamento.add(this.spinnerHoraInicioAgendamento, gbcControles);
 
-        // Campo Hora Fim (JSpinner)
-        gbcControles.gridx = 2; // Na mesma linha que Hora Início, mas coluna diferente
-        gbcControles.anchor = GridBagConstraints.EAST; // Alinhar label à direita
+        gbcControles.gridx = 2;
+        gbcControles.anchor = GridBagConstraints.EAST;
         JLabel labelHoraFim = new JLabel("Hora Fim (HH:mm):");
         labelHoraFim.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         painelControlesAgendamento.add(labelHoraFim, gbcControles);
-        gbcControles.anchor = GridBagConstraints.WEST; // Reset anchor
+        gbcControles.anchor = GridBagConstraints.WEST;
 
         gbcControles.gridx = 3;
-        this.spinnerHoraFimAgendamento = new JSpinner(new SpinnerDateModel()); // Atribuir ao campo da classe
+        this.spinnerHoraFimAgendamento = new JSpinner(new SpinnerDateModel());
         JSpinner.DateEditor editorHoraFim = new JSpinner.DateEditor(this.spinnerHoraFimAgendamento, "HH:mm");
         this.spinnerHoraFimAgendamento.setEditor(editorHoraFim);
         this.spinnerHoraFimAgendamento.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        // Definir um valor inicial (ex: 09:00)
         java.util.Calendar calFim = java.util.Calendar.getInstance();
         calFim.set(java.util.Calendar.HOUR_OF_DAY, 9);
         calFim.set(java.util.Calendar.MINUTE, 0);
         this.spinnerHoraFimAgendamento.setValue(calFim.getTime());
         painelControlesAgendamento.add(this.spinnerHoraFimAgendamento, gbcControles);
 
-        // Botão Adicionar Horário
         gbcControles.gridx = 0;
         gbcControles.gridy = 3;
-        gbcControles.gridwidth = 4; // Ocupar todas as colunas
-        gbcControles.anchor = GridBagConstraints.CENTER; // Centralizar botão
-        gbcControles.fill = GridBagConstraints.NONE; // Não expandir o botão
+        gbcControles.gridwidth = 4;
+        gbcControles.anchor = GridBagConstraints.CENTER;
+        gbcControles.fill = GridBagConstraints.NONE;
         JButton botaoAdicionarHorario = new JButton("Adicionar Horário");
         botaoAdicionarHorario.setFont(new Font("Segoe UI", Font.BOLD, 14));
         botaoAdicionarHorario.setForeground(BRANCO);
@@ -679,15 +610,12 @@ public class TelaPrincipalUI extends JFrame {
         botaoAdicionarHorario.setBorderPainted(false);
         botaoAdicionarHorario.setCursor(new Cursor(Cursor.HAND_CURSOR));
         botaoAdicionarHorario.setMargin(new Insets(8, 15, 8, 15));
-        // Adicionar ActionListener (será implementado em passo futuro)
         botaoAdicionarHorario.addActionListener(e -> {
-            // 1. Coletar Dados
             Espaco espacoSelecionado = (Espaco) this.comboBoxEspacosAgendamento.getSelectedItem();
             String dataStr = this.campoDataAgendamento.getText();
             Date horaInicioSelecionada = (Date) this.spinnerHoraInicioAgendamento.getValue();
             Date horaFimSelecionada = (Date) this.spinnerHoraFimAgendamento.getValue();
 
-            // 2. Validação de Campos
             if (espacoSelecionado == null) {
                 JOptionPane.showMessageDialog(TelaPrincipalUI.this, "Por favor, selecione um espaço.", "Erro de Validação", JOptionPane.ERROR_MESSAGE);
                 return;
@@ -702,37 +630,31 @@ public class TelaPrincipalUI extends JFrame {
                 return;
             }
 
-            // Normalizar horaInicio e horaFim para terem a mesma data (a data selecionada)
-            // Isso é importante para comparações e para evitar problemas com o componente JSpinner
-            // que pode manter sua própria data interna se não for resetado.
-            Calendar cal = Calendar.getInstance();
-            cal.setTime(dataSelecionada);
+            java.util.Calendar calendarioDataBase = java.util.Calendar.getInstance();
+            calendarioDataBase.setTime(dataSelecionada);
 
-            Calendar calInicioAgendamento = Calendar.getInstance();
-            calInicioAgendamento.setTime(horaInicioSelecionada);
-            calInicioAgendamento.set(Calendar.YEAR, cal.get(Calendar.YEAR));
-            calInicioAgendamento.set(Calendar.MONTH, cal.get(Calendar.MONTH));
-            calInicioAgendamento.set(Calendar.DAY_OF_MONTH, cal.get(Calendar.DAY_OF_MONTH));
-            Date horaInicioFinal = calInicioAgendamento.getTime();
+            java.util.Calendar calendarioAgendInicio = java.util.Calendar.getInstance();
+            calendarioAgendInicio.setTime(horaInicioSelecionada);
+            calendarioAgendInicio.set(java.util.Calendar.YEAR, calendarioDataBase.get(java.util.Calendar.YEAR));
+            calendarioAgendInicio.set(java.util.Calendar.MONTH, calendarioDataBase.get(java.util.Calendar.MONTH));
+            calendarioAgendInicio.set(java.util.Calendar.DAY_OF_MONTH, calendarioDataBase.get(java.util.Calendar.DAY_OF_MONTH));
+            Date horaInicioFinal = calendarioAgendInicio.getTime();
 
-            Calendar calFimAgendamento = Calendar.getInstance();
-            calFimAgendamento.setTime(horaFimSelecionada);
-            calFimAgendamento.set(Calendar.YEAR, cal.get(Calendar.YEAR));
-            calFimAgendamento.set(Calendar.MONTH, cal.get(Calendar.MONTH));
-            calFimAgendamento.set(Calendar.DAY_OF_MONTH, cal.get(Calendar.DAY_OF_MONTH));
-            Date horaFimFinal = calFimAgendamento.getTime();
+            java.util.Calendar calendarioAgendFim = java.util.Calendar.getInstance();
+            calendarioAgendFim.setTime(horaFimSelecionada);
+            calendarioAgendFim.set(java.util.Calendar.YEAR, calendarioDataBase.get(java.util.Calendar.YEAR));
+            calendarioAgendFim.set(java.util.Calendar.MONTH, calendarioDataBase.get(java.util.Calendar.MONTH));
+            calendarioAgendFim.set(java.util.Calendar.DAY_OF_MONTH, calendarioDataBase.get(java.util.Calendar.DAY_OF_MONTH));
+            Date horaFimFinal = calendarioAgendFim.getTime();
 
             if (horaFimFinal.before(horaInicioFinal) || horaFimFinal.equals(horaInicioFinal)) {
                 JOptionPane.showMessageDialog(TelaPrincipalUI.this, "A hora de fim deve ser posterior à hora de início.", "Erro de Validação", JOptionPane.ERROR_MESSAGE);
                 return;
             }
 
-            // 3. Validação de Conflitos
             for (Agendamento ag : this.listaDeAgendamentos) {
                 if (ag.getEspaco().getId().equals(espacoSelecionado.getId()) &&
                     isMesmaData(ag.getData(), dataSelecionada)) {
-                    // Conflito se:
-                    // (NovoInicio < AgExistenteFim) E (NovoFim > AgExistenteInicio)
                     if (horaInicioFinal.before(ag.getHoraFim()) && horaFimFinal.after(ag.getHoraInicio())) {
                         JOptionPane.showMessageDialog(TelaPrincipalUI.this,
                             "Conflito de horário! Já existe um agendamento para este espaço neste período.",
@@ -742,44 +664,31 @@ public class TelaPrincipalUI extends JFrame {
                 }
             }
 
-            // 4. Criar e Adicionar Agendamento
             Agendamento novoAgendamento = new Agendamento(espacoSelecionado, dataSelecionada, horaInicioFinal, horaFimFinal);
             this.listaDeAgendamentos.add(novoAgendamento);
-
-            // 5. Atualizar Tabela (o método será criado/finalizado no próximo passo)
             atualizarTabelaAgendamentos();
-
             JOptionPane.showMessageDialog(TelaPrincipalUI.this, "Agendamento adicionado com sucesso!", "Sucesso", JOptionPane.INFORMATION_MESSAGE);
-
-            // Adicionar chamada para salvar no CSV:
             GerenciadorCSVDados.salvarAgendamentosNoCSV(ARQUIVO_AGENDAMENTOS_CSV, this.listaDeAgendamentos);
-
-            // Limpar campos (opcional)
-            // this.campoDataAgendamento.setValue(null); // JFormattedTextField pode precisar de setText("")
-            // Ou resetar para o dia atual ou próximo dia útil.
         });
         painelControlesAgendamento.add(botaoAdicionarHorario, gbcControles);
 
-        // Adicionar o painel de controles ao painel principal da aba Agendas (no topo)
         JPanel painelSuperiorAgendas = new JPanel(new BorderLayout());
-        painelSuperiorAgendas.setOpaque(false); // Transparente
-        tituloAgendas.setBorder(BorderFactory.createEmptyBorder(0, 0, 15, 0)); // Adiciona margem inferior ao título
+        painelSuperiorAgendas.setOpaque(false);
+        tituloAgendas.setBorder(BorderFactory.createEmptyBorder(0, 0, 15, 0));
         painelSuperiorAgendas.add(tituloAgendas, BorderLayout.NORTH);
         painelSuperiorAgendas.add(painelControlesAgendamento, BorderLayout.CENTER);
 
         painel.add(painelSuperiorAgendas, BorderLayout.NORTH);
 
-        // Tabela para listar horários
         String[] colunasTabelaAgendamentos = {"Espaço", "Data", "Hora Início", "Hora Fim", "Ações"};
         this.modeloTabelaAgendamentos = new DefaultTableModel(colunasTabelaAgendamentos, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
-                return column == (colunasTabelaAgendamentos.length - 1); // "Ações" é a última coluna
+                return column == (colunasTabelaAgendamentos.length - 1);
             }
         };
         JTable tabelaAgendamentos = new JTable(this.modeloTabelaAgendamentos);
 
-        // Estilização da tabela (similar à tabela de espaços)
         tabelaAgendamentos.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         tabelaAgendamentos.setRowHeight(30);
         tabelaAgendamentos.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 15));
@@ -788,14 +697,10 @@ public class TelaPrincipalUI extends JFrame {
         tabelaAgendamentos.setFillsViewportHeight(true);
         tabelaAgendamentos.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
-        // Configurar a coluna "Ações" para usar o renderer e editor customizados
-        int indiceColunaAcoesAgend = this.modeloTabelaAgendamentos.getColumnCount() - 1; // "Ações" é a última
+        int indiceColunaAcoesAgend = this.modeloTabelaAgendamentos.getColumnCount() - 1;
         if (indiceColunaAcoesAgend >= 0 && this.modeloTabelaAgendamentos.getColumnName(indiceColunaAcoesAgend).equals("Ações")) {
 
             AcoesTabelaCellRendererEditor rendererEditorAgend = new AcoesTabelaCellRendererEditor(tabelaAgendamentos);
-            // Nota: AcoesTabelaPanel atualmente mostra Editar e Excluir.
-            // Para esta tabela, apenas a ação de Excluir será funcional.
-
             tabelaAgendamentos.getColumnModel().getColumn(indiceColunaAcoesAgend).setCellRenderer(rendererEditorAgend);
             tabelaAgendamentos.getColumnModel().getColumn(indiceColunaAcoesAgend).setCellEditor(rendererEditorAgend);
 
@@ -803,7 +708,6 @@ public class TelaPrincipalUI extends JFrame {
             tabelaAgendamentos.getColumnModel().getColumn(indiceColunaAcoesAgend).setMinWidth(80);
             tabelaAgendamentos.getColumnModel().getColumn(indiceColunaAcoesAgend).setMaxWidth(100);
 
-            // Adicionar ActionListener específico para o botão Excluir do editor
             rendererEditorAgend.addActionListenerParaExcluir(e -> {
                 int linhaSelecionadaVisual = tabelaAgendamentos.getSelectedRow();
                 if (linhaSelecionadaVisual != -1) {
@@ -822,17 +726,12 @@ public class TelaPrincipalUI extends JFrame {
                 }
             });
 
-            // Listener informativo para o botão Editar (já que AcoesTabelaPanel o exibe)
             rendererEditorAgend.addActionListenerParaEditar(e -> {
                  JOptionPane.showMessageDialog(TelaPrincipalUI.this,
                                                     "A edição de agendamentos não está implementada nesta tabela.",
                                                     "Informação", JOptionPane.INFORMATION_MESSAGE);
             });
         }
-
-        // Adicionar dados de exemplo (remover ou comentar depois)
-        // modeloTabelaAgendamentos.addRow(new Object[]{"Sala Alpha", "25/12/2023", "10:00", "11:00", "Remover"});
-        // modeloTabelaAgendamentos.addRow(new Object[]{"Sala Beta", "26/12/2023", "14:30", "15:30", "Remover"});
 
         JScrollPane scrollPaneTabelaAgendamentos = new JScrollPane(tabelaAgendamentos);
         painel.add(scrollPaneTabelaAgendamentos, BorderLayout.CENTER);
@@ -845,42 +744,27 @@ public class TelaPrincipalUI extends JFrame {
             System.err.println("modeloTabelaAgendamentos ainda não foi inicializado!");
             return;
         }
-        this.modeloTabelaAgendamentos.setRowCount(0); // Limpa a tabela
+        this.modeloTabelaAgendamentos.setRowCount(0);
 
         Espaco espacoFiltrar = null;
-        // Verifica se o comboBoxEspacosAgendamento já foi inicializado e tem algum item selecionado
         if (this.comboBoxEspacosAgendamento != null && this.comboBoxEspacosAgendamento.getSelectedItem() instanceof Espaco) {
             espacoFiltrar = (Espaco) this.comboBoxEspacosAgendamento.getSelectedItem();
         }
 
         for (Agendamento ag : this.listaDeAgendamentos) {
-            // Se um espaço foi selecionado para filtro, apenas mostra agendamentos desse espaço
-            // Se nenhum espaço estiver selecionado (espacoFiltrar == null), mostra todos.
-            // Ou, podemos ter um item "Todos os Espaços" no ComboBox.
-            // Por agora, se nada específico for selecionado (ou o ComboBox estiver vazio/não pronto),
-            // vamos considerar mostrar todos, ou podemos decidir não mostrar nada até que um espaço seja escolhido.
-            // A lógica atual: se espacoFiltrar é null (ex: ComboBox vazio ou item não Espaco), mostra todos.
-            // Se espacoFiltrar NÃO é null, filtra.
-
-            boolean deveAdicionar = true; // Por padrão, adiciona
-            if (espacoFiltrar != null) { // Se há um filtro ativo
+            boolean deveAdicionar = true;
+            if (espacoFiltrar != null) {
                 if (!ag.getEspaco().getId().equals(espacoFiltrar.getId())) {
-                    deveAdicionar = false; // Não é do espaço filtrado
+                    deveAdicionar = false;
                 }
             }
-            // Se você quiser que NADA seja mostrado até que um espaço seja selecionado,
-            // mude a inicialização de deveAdicionar para false e só sete para true se espacoFiltrar for null
-            // OU se o agendamento corresponder ao espacoFiltrar.
-            // Ex: boolean deveAdicionar = (espacoFiltrar == null) || (ag.getEspaco().getId().equals(espacoFiltrar.getId()));
-
-
             if (deveAdicionar) {
                 this.modeloTabelaAgendamentos.addRow(new Object[]{
                     ag.getEspaco().getNome(),
                     ag.getDataFormatada(),
                     ag.getHoraInicioFormatada(),
                     ag.getHoraFimFormatada(),
-                    null // Para a coluna de ações com botões
+                    null
                 });
             }
         }
@@ -903,8 +787,8 @@ public class TelaPrincipalUI extends JFrame {
 
             if (confirmacao == JOptionPane.YES_OPTION) {
                 listaDeAgendamentos.remove(linhaModelo);
-                atualizarTabelaAgendamentos(); // Método que já repopula a tabela
-                GerenciadorCSVDados.salvarAgendamentosNoCSV(ARQUIVO_AGENDAMENTOS_CSV, this.listaDeAgendamentos); // Salvar após remover
+                atualizarTabelaAgendamentos();
+                GerenciadorCSVDados.salvarAgendamentosNoCSV(ARQUIVO_AGENDAMENTOS_CSV, this.listaDeAgendamentos);
                 System.out.println("Agendamento removido.");
             } else {
                 System.out.println("Remoção de agendamento cancelada.");
@@ -915,32 +799,71 @@ public class TelaPrincipalUI extends JFrame {
     }
 
     private void configurarBotaoSidebar(JButton botao, ImageIcon icone) {
-        botao.setFont(new Font("Segoe UI", Font.BOLD, 16)); // Fonte para sidebar
-        botao.setForeground(BRANCO); // Texto branco para contraste com fundo verde
-        botao.setBackground(VERDE_PRINCIPAL); // Fundo verde da sidebar
-        botao.setOpaque(false); // Para controle do fundo no hover
+        botao.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        botao.setForeground(BRANCO);
+        botao.setBackground(VERDE_PRINCIPAL);
+        botao.setOpaque(false);
         botao.setFocusPainted(false);
-        botao.setBorderPainted(false); // Sem borda para um look mais integrado
+        botao.setBorderPainted(false);
         botao.setCursor(new Cursor(Cursor.HAND_CURSOR));
         botao.setHorizontalAlignment(SwingConstants.LEFT);
-        botao.setIconTextGap(15); // Espaço entre ícone e texto
-        botao.setMargin(new Insets(10, 15, 10, 15)); // Padding interno do botão
+        botao.setIconTextGap(15);
+        botao.setMargin(new Insets(10, 15, 10, 15));
 
         if (icone != null) {
-            botao.setIcon(new ImageIcon(icone.getImage().getScaledInstance(22, 22, Image.SCALE_SMOOTH))); // Ícones um pouco maiores para sidebar
+            botao.setIcon(new ImageIcon(icone.getImage().getScaledInstance(22, 22, Image.SCALE_SMOOTH)));
         }
 
         botao.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseEntered(java.awt.event.MouseEvent evt) {
                 botao.setOpaque(true);
-                botao.setBackground(VERDE_PRINCIPAL.brighter().brighter()); // Mais claro no hover
+                botao.setBackground(VERDE_PRINCIPAL.brighter().brighter());
             }
 
             public void mouseExited(java.awt.event.MouseEvent evt) {
                 botao.setOpaque(false);
-                botao.setBackground(VERDE_PRINCIPAL); // Volta ao normal
+                botao.setBackground(VERDE_PRINCIPAL);
             }
         });
+    }
+
+    private void atualizarComboBoxEspacosAgendamento() {
+        if (this.comboBoxEspacosAgendamento == null) {
+            // ComboBox ainda não foi inicializado (painel de Agendas talvez não aberto)
+            return;
+        }
+
+        // Salvar o item selecionado anteriormente, se houver e for válido
+        Object itemSelecionadoAnteriormente = this.comboBoxEspacosAgendamento.getSelectedItem();
+
+        // Limpar itens existentes
+        this.comboBoxEspacosAgendamento.removeAllItems();
+
+        // Repopular com a lista atualizada de espaços
+        if (this.listaDeEspacos != null) {
+            for (Espaco esp : this.listaDeEspacos) {
+                this.comboBoxEspacosAgendamento.addItem(esp);
+            }
+        }
+
+        // Tentar restaurar a seleção anterior, se ainda existir na lista
+        if (itemSelecionadoAnteriormente instanceof Espaco) {
+            Espaco espacoAnterior = (Espaco) itemSelecionadoAnteriormente;
+            for (int i = 0; i < this.comboBoxEspacosAgendamento.getItemCount(); i++) {
+                Espaco itemAtual = this.comboBoxEspacosAgendamento.getItemAt(i);
+                if (itemAtual != null && itemAtual.getId().equals(espacoAnterior.getId())) {
+                    this.comboBoxEspacosAgendamento.setSelectedIndex(i);
+                    break;
+                }
+            }
+        } else if (this.comboBoxEspacosAgendamento.getItemCount() > 0) {
+            // Se não havia seleção válida ou o item anterior sumiu, seleciona o primeiro (se houver)
+            this.comboBoxEspacosAgendamento.setSelectedIndex(0);
+        }
+
+        // Atualizar a tabela de agendamentos, pois a seleção do combobox pode ter mudado
+        // ou os espaços disponíveis para filtro mudaram.
+        atualizarTabelaAgendamentos();
     }
 
     /*
@@ -997,3 +920,5 @@ public class TelaPrincipalUI extends JFrame {
         SwingUtilities.invokeLater(() -> new TelaPrincipalUI().setVisible(true));
     }
 }
+
+[end of demo/src/main/java/espaco_capita/TelaPrincipalUI.java]
