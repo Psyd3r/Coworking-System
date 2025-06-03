@@ -16,6 +16,16 @@ import javax.swing.ListSelectionModel; // Importação para ListSelectionModel
 import java.util.List; // Importação para List
 import java.util.ArrayList; // Importação para ArrayList
 import javax.swing.JOptionPane; // Importação para JOptionPane
+import javax.swing.JComboBox; // Importação para JComboBox
+import javax.swing.JFormattedTextField; // Importação para JFormattedTextField
+import javax.swing.text.MaskFormatter; // Importação para MaskFormatter
+import javax.swing.JSpinner; // Importação para JSpinner
+import javax.swing.SpinnerDateModel; // Importação para SpinnerDateModel
+import java.util.Date; // Importação para Date (usado em SpinnerDateModel)
+import java.util.Calendar; // Importação para Calendar
+import javax.swing.DefaultListCellRenderer; // Importação para DefaultListCellRenderer
+import javax.swing.JList; // Importação para JList
+// GridBagLayout e GridBagConstraints já estão importados de java.awt.*
 
 public class TelaPrincipalUI extends JFrame {
 
@@ -31,7 +41,15 @@ public class TelaPrincipalUI extends JFrame {
     private ImageIcon iconeAgendas;
     private JPanel painelConteudo; // Adicionado como campo da classe
     private DefaultTableModel modeloTabelaEspacos; // Adicionado para a tabela de espaços
+    private DefaultTableModel modeloTabelaAgendamentos; // Adicionado para a tabela de agendamentos
     private java.util.List<Espaco> listaDeEspacos; // Lista para armazenar os espaços
+    private java.util.List<Agendamento> listaDeAgendamentos; // Lista para armazenar os agendamentos
+
+    // Campos para os controles da aba Agendamentos
+    private JComboBox<Espaco> comboBoxEspacosAgendamento;
+    private JFormattedTextField campoDataAgendamento;
+    private JSpinner spinnerHoraInicioAgendamento;
+    private JSpinner spinnerHoraFimAgendamento;
 
     public TelaPrincipalUI() {
         setTitle("Espaço Capital - Sistema de Agendamento");
@@ -93,6 +111,7 @@ public class TelaPrincipalUI extends JFrame {
 
         // Inicializar a lista de espaços
         this.listaDeEspacos = new java.util.ArrayList<>();
+        this.listaDeAgendamentos = new java.util.ArrayList<>(); // Inicializar lista de agendamentos
 
         // Dados de exemplo (para teste) - Remova ou comente em produção
         // this.listaDeEspacos.add(new Espaco("Sala Alpha", 10, "Projetor, AC"));
@@ -494,14 +513,360 @@ public class TelaPrincipalUI extends JFrame {
         JLabel tituloAgendas = new JLabel("Gerenciamento de Agendas", SwingConstants.CENTER);
         tituloAgendas.setFont(new Font("Segoe UI", Font.BOLD, 22));
         tituloAgendas.setForeground(PRETO_SUAVE);
-        tituloAgendas.setBorder(BorderFactory.createEmptyBorder(0, 0, 15, 0));
-        painel.add(tituloAgendas, BorderLayout.NORTH);
+        // tituloAgendas.setBorder(BorderFactory.createEmptyBorder(0, 0, 15, 0)); // Movido para painelSuperiorAgendas
+        // painel.add(tituloAgendas, BorderLayout.NORTH); // Movido para painelSuperiorAgendas
 
-        JLabel placeholderConteudo = new JLabel("Conteúdo da Aba Agendas em breve...", SwingConstants.CENTER);
-        placeholderConteudo.setFont(new Font("Segoe UI", Font.PLAIN, 16));
-        painel.add(placeholderConteudo, BorderLayout.CENTER);
+        JPanel painelControlesAgendamento = new JPanel(new GridBagLayout());
+        painelControlesAgendamento.setBackground(BRANCO);
+        painelControlesAgendamento.setBorder(BorderFactory.createTitledBorder(
+            BorderFactory.createEtchedBorder(), "Novo Agendamento",
+            javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION,
+            javax.swing.border.TitledBorder.DEFAULT_POSITION,
+            new Font("Segoe UI", Font.BOLD, 14), PRETO_SUAVE
+        ));
+        GridBagConstraints gbcControles = new GridBagConstraints();
+        gbcControles.insets = new Insets(5, 8, 5, 8); // Padding
+        gbcControles.anchor = GridBagConstraints.WEST;
+        gbcControles.fill = GridBagConstraints.HORIZONTAL;
+
+        // Seletor de Espaço (JComboBox)
+        gbcControles.gridx = 0;
+        gbcControles.gridy = 0;
+        JLabel labelSeletorEspaco = new JLabel("Espaço:");
+        labelSeletorEspaco.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        painelControlesAgendamento.add(labelSeletorEspaco, gbcControles);
+
+        gbcControles.gridx = 1;
+        gbcControles.gridwidth = 3; // Ocupar mais colunas
+        this.comboBoxEspacosAgendamento = new JComboBox<>(); // Atribuir ao campo da classe
+        // Popular o ComboBox com os espaços da listaDeEspacos
+        if (this.listaDeEspacos != null) {
+            for (Espaco esp : this.listaDeEspacos) {
+                this.comboBoxEspacosAgendamento.addItem(esp);
+            }
+        }
+        // Customizar o renderer do ComboBox para mostrar espaco.getNome()
+        this.comboBoxEspacosAgendamento.setRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+                super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                if (value instanceof Espaco) {
+                    setText(((Espaco) value).getNome());
+                }
+                return this;
+            }
+        });
+        this.comboBoxEspacosAgendamento.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        // Adicionar ActionListener para atualizar a tabela quando o espaço mudar
+        this.comboBoxEspacosAgendamento.addActionListener(e -> {
+            atualizarTabelaAgendamentos();
+        });
+        painelControlesAgendamento.add(this.comboBoxEspacosAgendamento, gbcControles);
+        gbcControles.gridwidth = 1; // Reset gridwidth
+
+        // Campo de Data (JFormattedTextField)
+        gbcControles.gridx = 0;
+        gbcControles.gridy = 1;
+        JLabel labelData = new JLabel("Data (dd/mm/aaaa):");
+        labelData.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        painelControlesAgendamento.add(labelData, gbcControles);
+
+        gbcControles.gridx = 1;
+        // JFormattedTextField campoData = null; // Linha antiga
+        try {
+            javax.swing.text.MaskFormatter mascaraData = new javax.swing.text.MaskFormatter("##/##/####");
+            mascaraData.setPlaceholderCharacter('_');
+            this.campoDataAgendamento = new JFormattedTextField(mascaraData); // Atribuir ao campo da classe
+            this.campoDataAgendamento.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+            this.campoDataAgendamento.setColumns(8); // Largura
+        } catch (java.text.ParseException e) {
+            e.printStackTrace();
+            this.campoDataAgendamento = new JFormattedTextField(); // Fallback
+        }
+        painelControlesAgendamento.add(this.campoDataAgendamento, gbcControles);
+
+        // Campo Hora Início (JSpinner)
+        gbcControles.gridx = 0;
+        gbcControles.gridy = 2;
+        JLabel labelHoraInicio = new JLabel("Hora Início (HH:mm):");
+        labelHoraInicio.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        painelControlesAgendamento.add(labelHoraInicio, gbcControles);
+
+        gbcControles.gridx = 1;
+        this.spinnerHoraInicioAgendamento = new JSpinner(new SpinnerDateModel()); // Atribuir ao campo da classe
+        JSpinner.DateEditor editorHoraInicio = new JSpinner.DateEditor(this.spinnerHoraInicioAgendamento, "HH:mm");
+        this.spinnerHoraInicioAgendamento.setEditor(editorHoraInicio);
+        this.spinnerHoraInicioAgendamento.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        // Definir um valor inicial (ex: 08:00)
+        java.util.Calendar calInicio = java.util.Calendar.getInstance();
+        calInicio.set(java.util.Calendar.HOUR_OF_DAY, 8);
+        calInicio.set(java.util.Calendar.MINUTE, 0);
+        this.spinnerHoraInicioAgendamento.setValue(calInicio.getTime());
+        painelControlesAgendamento.add(this.spinnerHoraInicioAgendamento, gbcControles);
+
+        // Campo Hora Fim (JSpinner)
+        gbcControles.gridx = 2; // Na mesma linha que Hora Início, mas coluna diferente
+        gbcControles.anchor = GridBagConstraints.EAST; // Alinhar label à direita
+        JLabel labelHoraFim = new JLabel("Hora Fim (HH:mm):");
+        labelHoraFim.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        painelControlesAgendamento.add(labelHoraFim, gbcControles);
+        gbcControles.anchor = GridBagConstraints.WEST; // Reset anchor
+
+        gbcControles.gridx = 3;
+        this.spinnerHoraFimAgendamento = new JSpinner(new SpinnerDateModel()); // Atribuir ao campo da classe
+        JSpinner.DateEditor editorHoraFim = new JSpinner.DateEditor(this.spinnerHoraFimAgendamento, "HH:mm");
+        this.spinnerHoraFimAgendamento.setEditor(editorHoraFim);
+        this.spinnerHoraFimAgendamento.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        // Definir um valor inicial (ex: 09:00)
+        java.util.Calendar calFim = java.util.Calendar.getInstance();
+        calFim.set(java.util.Calendar.HOUR_OF_DAY, 9);
+        calFim.set(java.util.Calendar.MINUTE, 0);
+        this.spinnerHoraFimAgendamento.setValue(calFim.getTime());
+        painelControlesAgendamento.add(this.spinnerHoraFimAgendamento, gbcControles);
+
+        // Botão Adicionar Horário
+        gbcControles.gridx = 0;
+        gbcControles.gridy = 3;
+        gbcControles.gridwidth = 4; // Ocupar todas as colunas
+        gbcControles.anchor = GridBagConstraints.CENTER; // Centralizar botão
+        gbcControles.fill = GridBagConstraints.NONE; // Não expandir o botão
+        JButton botaoAdicionarHorario = new JButton("Adicionar Horário");
+        botaoAdicionarHorario.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        botaoAdicionarHorario.setForeground(BRANCO);
+        botaoAdicionarHorario.setBackground(VERDE_PRINCIPAL);
+        botaoAdicionarHorario.setOpaque(true);
+        botaoAdicionarHorario.setBorderPainted(false);
+        botaoAdicionarHorario.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        botaoAdicionarHorario.setMargin(new Insets(8, 15, 8, 15));
+        // Adicionar ActionListener (será implementado em passo futuro)
+        botaoAdicionarHorario.addActionListener(e -> {
+            // 1. Coletar Dados
+            Espaco espacoSelecionado = (Espaco) this.comboBoxEspacosAgendamento.getSelectedItem();
+            String dataStr = this.campoDataAgendamento.getText();
+            Date horaInicioSelecionada = (Date) this.spinnerHoraInicioAgendamento.getValue();
+            Date horaFimSelecionada = (Date) this.spinnerHoraFimAgendamento.getValue();
+
+            // 2. Validação de Campos
+            if (espacoSelecionado == null) {
+                JOptionPane.showMessageDialog(TelaPrincipalUI.this, "Por favor, selecione um espaço.", "Erro de Validação", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            if (dataStr.trim().replace("_", "").isEmpty() || dataStr.trim().length() != 10) {
+                JOptionPane.showMessageDialog(TelaPrincipalUI.this, "Por favor, insira uma data válida (dd/mm/aaaa).", "Erro de Validação", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            Date dataSelecionada = parseData(dataStr);
+            if (dataSelecionada == null) {
+                JOptionPane.showMessageDialog(TelaPrincipalUI.this, "Formato de data inválido. Use dd/mm/aaaa.", "Erro de Validação", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            // Normalizar horaInicio e horaFim para terem a mesma data (a data selecionada)
+            // Isso é importante para comparações e para evitar problemas com o componente JSpinner
+            // que pode manter sua própria data interna se não for resetado.
+            Calendar cal = Calendar.getInstance();
+            cal.setTime(dataSelecionada);
+
+            Calendar calInicio = Calendar.getInstance();
+            calInicio.setTime(horaInicioSelecionada);
+            calInicio.set(Calendar.YEAR, cal.get(Calendar.YEAR));
+            calInicio.set(Calendar.MONTH, cal.get(Calendar.MONTH));
+            calInicio.set(Calendar.DAY_OF_MONTH, cal.get(Calendar.DAY_OF_MONTH));
+            Date horaInicioFinal = calInicio.getTime();
+
+            Calendar calFim = Calendar.getInstance();
+            calFim.setTime(horaFimSelecionada);
+            calFim.set(Calendar.YEAR, cal.get(Calendar.YEAR));
+            calFim.set(Calendar.MONTH, cal.get(Calendar.MONTH));
+            calFim.set(Calendar.DAY_OF_MONTH, cal.get(Calendar.DAY_OF_MONTH));
+            Date horaFimFinal = calFim.getTime();
+
+            if (horaFimFinal.before(horaInicioFinal) || horaFimFinal.equals(horaInicioFinal)) {
+                JOptionPane.showMessageDialog(TelaPrincipalUI.this, "A hora de fim deve ser posterior à hora de início.", "Erro de Validação", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            // 3. Validação de Conflitos
+            for (Agendamento ag : this.listaDeAgendamentos) {
+                if (ag.getEspaco().getId().equals(espacoSelecionado.getId()) &&
+                    isMesmaData(ag.getData(), dataSelecionada)) {
+                    // Conflito se:
+                    // (NovoInicio < AgExistenteFim) E (NovoFim > AgExistenteInicio)
+                    if (horaInicioFinal.before(ag.getHoraFim()) && horaFimFinal.after(ag.getHoraInicio())) {
+                        JOptionPane.showMessageDialog(TelaPrincipalUI.this,
+                            "Conflito de horário! Já existe um agendamento para este espaço neste período.",
+                            "Erro de Validação", JOptionPane.ERROR_MESSAGE);
+                        return;
+                    }
+                }
+            }
+
+            // 4. Criar e Adicionar Agendamento
+            Agendamento novoAgendamento = new Agendamento(espacoSelecionado, dataSelecionada, horaInicioFinal, horaFimFinal);
+            this.listaDeAgendamentos.add(novoAgendamento);
+
+            // 5. Atualizar Tabela (o método será criado/finalizado no próximo passo)
+            atualizarTabelaAgendamentos();
+
+            JOptionPane.showMessageDialog(TelaPrincipalUI.this, "Agendamento adicionado com sucesso!", "Sucesso", JOptionPane.INFORMATION_MESSAGE);
+
+            // Limpar campos (opcional)
+            // this.campoDataAgendamento.setValue(null); // JFormattedTextField pode precisar de setText("")
+            // Ou resetar para o dia atual ou próximo dia útil.
+        });
+        painelControlesAgendamento.add(botaoAdicionarHorario, gbcControles);
+
+        // Adicionar o painel de controles ao painel principal da aba Agendas (no topo)
+        JPanel painelSuperiorAgendas = new JPanel(new BorderLayout());
+        painelSuperiorAgendas.setOpaque(false); // Transparente
+        tituloAgendas.setBorder(BorderFactory.createEmptyBorder(0, 0, 15, 0)); // Adiciona margem inferior ao título
+        painelSuperiorAgendas.add(tituloAgendas, BorderLayout.NORTH);
+        painelSuperiorAgendas.add(painelControlesAgendamento, BorderLayout.CENTER);
+
+        painel.add(painelSuperiorAgendas, BorderLayout.NORTH);
+
+        // Tabela para listar horários
+        String[] colunasTabelaAgendamentos = {"Espaço", "Data", "Hora Início", "Hora Fim", "Ações"};
+        this.modeloTabelaAgendamentos = new DefaultTableModel(colunasTabelaAgendamentos, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return column == (colunasTabelaAgendamentos.length - 1); // "Ações" é a última coluna
+            }
+        };
+        JTable tabelaAgendamentos = new JTable(this.modeloTabelaAgendamentos);
+
+        // Estilização da tabela (similar à tabela de espaços)
+        tabelaAgendamentos.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        tabelaAgendamentos.setRowHeight(30);
+        tabelaAgendamentos.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 15));
+        tabelaAgendamentos.getTableHeader().setBackground(CINZA_CLARO);
+        tabelaAgendamentos.getTableHeader().setForeground(PRETO_SUAVE);
+        tabelaAgendamentos.setFillsViewportHeight(true);
+        tabelaAgendamentos.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+
+        // Configurar a coluna "Ações" para usar o renderer e editor customizados
+        int indiceColunaAcoesAgend = this.modeloTabelaAgendamentos.getColumnCount() - 1; // "Ações" é a última
+        if (indiceColunaAcoesAgend >= 0 && this.modeloTabelaAgendamentos.getColumnName(indiceColunaAcoesAgend).equals("Ações")) {
+
+            AcoesTabelaCellRendererEditor rendererEditorAgend = new AcoesTabelaCellRendererEditor(tabelaAgendamentos);
+            // Nota: AcoesTabelaPanel atualmente mostra Editar e Excluir.
+            // Para esta tabela, apenas a ação de Excluir será funcional.
+
+            tabelaAgendamentos.getColumnModel().getColumn(indiceColunaAcoesAgend).setCellRenderer(rendererEditorAgend);
+            tabelaAgendamentos.getColumnModel().getColumn(indiceColunaAcoesAgend).setCellEditor(rendererEditorAgend);
+
+            tabelaAgendamentos.getColumnModel().getColumn(indiceColunaAcoesAgend).setPreferredWidth(85);
+            tabelaAgendamentos.getColumnModel().getColumn(indiceColunaAcoesAgend).setMinWidth(80);
+            tabelaAgendamentos.getColumnModel().getColumn(indiceColunaAcoesAgend).setMaxWidth(100);
+
+            // Adicionar ActionListener específico para o botão Excluir do editor
+            rendererEditorAgend.addActionListenerParaExcluir(e -> {
+                int linhaSelecionadaVisual = tabelaAgendamentos.getSelectedRow();
+                if (linhaSelecionadaVisual != -1) {
+                    int linhaModelo = tabelaAgendamentos.convertRowIndexToModel(linhaSelecionadaVisual);
+                    removerAgendamento(linhaModelo);
+                } else {
+                    int linhaEditando = tabelaAgendamentos.getEditingRow();
+                    if (linhaEditando != -1) {
+                        int linhaModelo = tabelaAgendamentos.convertRowIndexToModel(linhaEditando);
+                        removerAgendamento(linhaModelo);
+                    } else {
+                        JOptionPane.showMessageDialog(TelaPrincipalUI.this,
+                                                    "Por favor, selecione um agendamento para remover.",
+                                                    "Aviso", JOptionPane.WARNING_MESSAGE);
+                    }
+                }
+            });
+
+            // Listener informativo para o botão Editar (já que AcoesTabelaPanel o exibe)
+            rendererEditorAgend.addActionListenerParaEditar(e -> {
+                 JOptionPane.showMessageDialog(TelaPrincipalUI.this,
+                                                    "A edição de agendamentos não está implementada nesta tabela.",
+                                                    "Informação", JOptionPane.INFORMATION_MESSAGE);
+            });
+        }
+
+        // Adicionar dados de exemplo (remover ou comentar depois)
+        // modeloTabelaAgendamentos.addRow(new Object[]{"Sala Alpha", "25/12/2023", "10:00", "11:00", "Remover"});
+        // modeloTabelaAgendamentos.addRow(new Object[]{"Sala Beta", "26/12/2023", "14:30", "15:30", "Remover"});
+
+        JScrollPane scrollPaneTabelaAgendamentos = new JScrollPane(tabelaAgendamentos);
+        painel.add(scrollPaneTabelaAgendamentos, BorderLayout.CENTER);
 
         return painel;
+    }
+
+    private void atualizarTabelaAgendamentos() {
+        if (this.modeloTabelaAgendamentos == null) {
+            System.err.println("modeloTabelaAgendamentos ainda não foi inicializado!");
+            return;
+        }
+        this.modeloTabelaAgendamentos.setRowCount(0); // Limpa a tabela
+
+        Espaco espacoFiltrar = null;
+        // Verifica se o comboBoxEspacosAgendamento já foi inicializado e tem algum item selecionado
+        if (this.comboBoxEspacosAgendamento != null && this.comboBoxEspacosAgendamento.getSelectedItem() instanceof Espaco) {
+            espacoFiltrar = (Espaco) this.comboBoxEspacosAgendamento.getSelectedItem();
+        }
+
+        for (Agendamento ag : this.listaDeAgendamentos) {
+            // Se um espaço foi selecionado para filtro, apenas mostra agendamentos desse espaço
+            // Se nenhum espaço estiver selecionado (espacoFiltrar == null), mostra todos.
+            // Ou, podemos ter um item "Todos os Espaços" no ComboBox.
+            // Por agora, se nada específico for selecionado (ou o ComboBox estiver vazio/não pronto),
+            // vamos considerar mostrar todos, ou podemos decidir não mostrar nada até que um espaço seja escolhido.
+            // A lógica atual: se espacoFiltrar é null (ex: ComboBox vazio ou item não Espaco), mostra todos.
+            // Se espacoFiltrar NÃO é null, filtra.
+
+            boolean deveAdicionar = true; // Por padrão, adiciona
+            if (espacoFiltrar != null) { // Se há um filtro ativo
+                if (!ag.getEspaco().getId().equals(espacoFiltrar.getId())) {
+                    deveAdicionar = false; // Não é do espaço filtrado
+                }
+            }
+            // Se você quiser que NADA seja mostrado até que um espaço seja selecionado,
+            // mude a inicialização de deveAdicionar para false e só sete para true se espacoFiltrar for null
+            // OU se o agendamento corresponder ao espacoFiltrar.
+            // Ex: boolean deveAdicionar = (espacoFiltrar == null) || (ag.getEspaco().getId().equals(espacoFiltrar.getId()));
+
+
+            if (deveAdicionar) {
+                this.modeloTabelaAgendamentos.addRow(new Object[]{
+                    ag.getEspaco().getNome(),
+                    ag.getDataFormatada(),
+                    ag.getHoraInicioFormatada(),
+                    ag.getHoraFimFormatada(),
+                    null // Para a coluna de ações com botões
+                });
+            }
+        }
+    }
+
+    private void removerAgendamento(int linhaModelo) {
+        if (linhaModelo >= 0 && linhaModelo < listaDeAgendamentos.size()) {
+            Agendamento agendamentoParaRemover = listaDeAgendamentos.get(linhaModelo);
+            int confirmacao = JOptionPane.showConfirmDialog(
+                TelaPrincipalUI.this,
+                "Tem certeza que deseja remover o agendamento para o espaço: " +
+                agendamentoParaRemover.getEspaco().getNome() + " em " +
+                agendamentoParaRemover.getDataFormatada() + " de " +
+                agendamentoParaRemover.getHoraInicioFormatada() + " às " +
+                agendamentoParaRemover.getHoraFimFormatada() + "?",
+                "Confirmar Remoção de Horário",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.WARNING_MESSAGE
+            );
+
+            if (confirmacao == JOptionPane.YES_OPTION) {
+                listaDeAgendamentos.remove(linhaModelo);
+                atualizarTabelaAgendamentos(); // Método que já repopula a tabela
+                System.out.println("Agendamento removido.");
+            } else {
+                System.out.println("Remoção de agendamento cancelada.");
+            }
+        } else {
+            System.err.println("Índice de linha inválido para remoção de agendamento: " + linhaModelo);
+        }
     }
 
     private void configurarBotaoSidebar(JButton botao, ImageIcon icone) {
