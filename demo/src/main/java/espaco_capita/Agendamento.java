@@ -14,8 +14,18 @@ public class Agendamento {
     private static final SimpleDateFormat FORMATO_DATA = new SimpleDateFormat("dd/MM/yyyy");
     private static final SimpleDateFormat FORMATO_HORA = new SimpleDateFormat("HH:mm");
 
+    // Construtor existente (para novos agendamentos criados pela UI)
     public Agendamento(Espaco espaco, Date data, Date horaInicio, Date horaFim) {
-        this.id = java.util.UUID.randomUUID().toString(); // ID único
+        this.id = java.util.UUID.randomUUID().toString(); // ID único gerado
+        this.espaco = espaco;
+        this.data = data;
+        this.horaInicio = horaInicio;
+        this.horaFim = horaFim;
+    }
+
+    // Novo construtor que aceita um ID (para carregar do CSV)
+    public Agendamento(String id, Espaco espaco, Date data, Date horaInicio, Date horaFim) {
+        this.id = id; // Usa o ID fornecido
         this.espaco = espaco;
         this.data = data;
         this.horaInicio = horaInicio;
