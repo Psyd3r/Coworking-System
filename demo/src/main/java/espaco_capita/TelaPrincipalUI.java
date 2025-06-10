@@ -1,205 +1,173 @@
 package espaco_capita;
 
-import com.formdev.flatlaf.FlatLightLaf;
+import com.formdev.flatlaf.FlatLightLaf; // Look and Feel
+
 import javax.swing.*;
+import javax.swing.Box; // Added for sidebar layout
+import javax.swing.BoxLayout; // Added for sidebar layout
+import javax.swing.border.EmptyBorder;
+import javax.swing.table.DefaultTableModel;
+import javax.swing.text.MaskFormatter; // Para campo de data em Agendas
+
 import java.awt.*;
-import java.io.File; // Importação para o método loadIcon
-// import java.net.URL; // Importação para futura refatoração do loadIcon com getResource
-import javax.swing.BoxLayout; // Importação para BoxLayout
-import javax.swing.Box; // Importação para Box
-import java.awt.Component; // Importação para Component.LEFT_ALIGNMENT
-import java.awt.CardLayout; // Importação para CardLayout
-import javax.swing.JTable; // Importação para JTable
-import javax.swing.JScrollPane; // Importação para JScrollPane
-import javax.swing.table.DefaultTableModel; // Importação para DefaultTableModel
-import javax.swing.ListSelectionModel; // Importação para ListSelectionModel
-import java.util.List; // Importação para List
-import java.util.ArrayList; // Importação para ArrayList
-import javax.swing.JOptionPane; // Importação para JOptionPane
-import javax.swing.JComboBox; // Importação para JComboBox
-import javax.swing.JFormattedTextField; // Importação para JFormattedTextField
-import javax.swing.text.MaskFormatter; // Importação para MaskFormatter
-import javax.swing.JSpinner; // Importação para JSpinner
-import javax.swing.SpinnerDateModel; // Importação para SpinnerDateModel
-import java.util.Date; // Importação para Date (usado em SpinnerDateModel)
-import java.util.Calendar; // Importação para Calendar
-import javax.swing.DefaultListCellRenderer; // Importação para DefaultListCellRenderer
-import javax.swing.JList; // Importação para JList
-import javax.swing.JCheckBox;
+import java.awt.Component; // Added for setAlignmentX
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.File; // Para loadIcon
+import java.text.ParseException; // Para MaskFormatter e SimpleDateFormat
+import java.text.SimpleDateFormat; // Para formatar datas/horas
+import java.util.ArrayList;
+import java.util.Calendar; // Para manipulação de datas/horas
+import java.util.Date;    // Para datas/horas
+import java.util.List;    // Para listas
 
 public class TelaPrincipalUI extends JFrame {
 
-    // Cores do sistema conforme a paleta definida na LoginUI
+    // Constantes de Cores (copiadas de LoginUI ou definidas aqui)
     private final Color VERDE_PRINCIPAL = Color.decode("#007a3e");
     private final Color CINZA_ESCURO = Color.decode("#3a3838");
     private final Color CINZA_CLARO = Color.decode("#d3d3d3");
     private final Color BRANCO = Color.decode("#ffffff");
     private final Color PRETO_SUAVE = Color.decode("#1a1a1a");
 
-    // Ícones para as abas
-    private ImageIcon iconeEspacos;
-    private ImageIcon iconeAgendas;
-    private ImageIcon iconeHorariosDisponiveis;
-    private JPanel painelConteudo;
-    private DefaultTableModel modeloTabelaEspacos;
-    private DefaultTableModel modeloTabelaAgendamentos;
-    private DefaultTableModel modeloTabelaDisponibilidades;
-    private java.util.List<Espaco> listaDeEspacos;
-    private java.util.List<Agendamento> listaDeAgendamentos;
-    private java.util.List<DisponibilidadeEspaco> listaDisponibilidades;
-
     // Constantes para nomes de arquivos CSV
     private static final String ARQUIVO_ESPACOS_CSV = "demo/espacos.csv";
     private static final String ARQUIVO_AGENDAMENTOS_CSV = "demo/agendamentos.csv";
     private static final String ARQUIVO_DISPONIBILIDADES_CSV = "demo/disponibilidades.csv";
 
-    // Campos para os controles da aba Agendamentos
-    private JComboBox<Espaco> comboBoxEspacosAgendamento;
+    // Listas de Dados em Memória
+    private List<Espaco> listaDeEspacos;
+    private List<Agendamento> listaDeAgendamentos;
+    private List<DisponibilidadeEspaco> listaDisponibilidades;
+
+    // Modelos de Tabela
+    private DefaultTableModel modeloTabelaEspacos;
+    private DefaultTableModel modeloTabelaAgendamentos;
+    private DefaultTableModel modeloTabelaDisponibilidades;
+
+    // Componentes da UI referenciáveis entre métodos
+    private JPanel painelConteudo; // Principal painel central com CardLayout
+
+    // --- Componentes da Aba Agendas ---
+    private JComboBox<Espaco> comboBoxEspacosAgendamento; // Seletor de espaços na aba Agendas
     private JFormattedTextField campoDataAgendamento;
     private JSpinner spinnerHoraInicioAgendamento;
     private JSpinner spinnerHoraFimAgendamento;
 
-    // Campos para os controles da aba HorariosDisponiveis
-    private JComboBox<Espaco> comboBoxEspacosDisponibilidade;
-    private java.util.List<JCheckBox> checkBoxesDiasSemana;
+    // --- Componentes da Aba Horários Disponíveis ---
+    private JComboBox<Espaco> comboBoxEspacosDisponibilidade; // Seletor de espaços na aba Disponibilidade
+    private List<JCheckBox> checkBoxesDiasSemana;
     private JSpinner spinnerHoraInicioDisp;
     private JSpinner spinnerHoraFimDisp;
 
+    // Ícones para abas da Sidebar
+    private ImageIcon iconeEspacos;
+    private ImageIcon iconeAgendas;
+    private ImageIcon iconeHorariosDisponiveis; // Placeholder para relogio-e-calendario.PNG
+    private ImageIcon iconeSair;
 
+    // Construtor Principal
     public TelaPrincipalUI() {
-        setTitle("Espaço Capital - Sistema de Agendamento");
-        setSize(1200, 800);
+        setTitle("Espaço Capital - Sistema de Agendamento Principal");
+        setSize(1280, 720); // Tamanho um pouco maior
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
         setResizable(true);
 
-        inicializarComponentes();
+        // Inicializar listas
+        this.listaDeEspacos = new ArrayList<>();
+        this.listaDeAgendamentos = new ArrayList<>();
+        this.listaDisponibilidades = new ArrayList<>();
+        this.checkBoxesDiasSemana = new ArrayList<>(); // Para aba Disponibilidade
+
+        carregarDadosIniciais();       // Carrega dados dos CSVs (será implementado)
+        inicializarComponentesVisuais(); // Configura a UI (será implementado)
+
         setVisible(true);
     }
 
-    private ImageIcon loadIcon(String path) {
-        try {
-            File fileFromPath = new File(path);
-            if (fileFromPath.isAbsolute() && fileFromPath.exists()) {
-                return new ImageIcon(path);
-            }
-            String basePathIcons = "demo/src/main/resources/icons/";
-            File iconFile = new File(basePathIcons + path);
+    // Método para carregar todos os dados iniciais (dos CSVs)
+    private void carregarDadosIniciais() {
+        System.out.println("Iniciando carregamento de dados dos arquivos CSV...");
 
-            if (iconFile.exists()) {
-                return new ImageIcon(iconFile.getAbsolutePath());
-            } else {
-                String basePathResources = "demo/src/main/resources/";
-                File resourceFile = new File(basePathResources + path);
-                if (resourceFile.exists()) {
-                    return new ImageIcon(resourceFile.getAbsolutePath());
-                } else {
-                    System.err.println("Arquivo de imagem não encontrado em /icons/ ou /resources/: " + path);
-                    return null;
-                }
-            }
-        } catch (Exception e) {
-            System.err.println("Erro ao carregar ícone/imagem: " + path);
-            e.printStackTrace();
-            return null;
-        }
+        // Carregar Espaços
+        this.listaDeEspacos = GerenciadorCSVDados.carregarEspacosDoCSV(ARQUIVO_ESPACOS_CSV);
+        System.out.println(this.listaDeEspacos.size() + " espaços carregados de " + ARQUIVO_ESPACOS_CSV);
+
+        // Carregar Agendamentos (precisa da listaDeEspacos para associar)
+        this.listaDeAgendamentos = GerenciadorCSVDados.carregarAgendamentosDoCSV(ARQUIVO_AGENDAMENTOS_CSV, this.listaDeEspacos);
+        System.out.println(this.listaDeAgendamentos.size() + " agendamentos carregados de " + ARQUIVO_AGENDAMENTOS_CSV);
+
+        // Carregar Disponibilidades (precisa da listaDeEspacos para associar)
+        this.listaDisponibilidades = GerenciadorCSVDados.carregarDisponibilidadesDoCSV(ARQUIVO_DISPONIBILIDADES_CSV, this.listaDeEspacos);
+        System.out.println(this.listaDisponibilidades.size() + " registros de disponibilidade carregados de " + ARQUIVO_DISPONIBILIDADES_CSV);
+
+        System.out.println("Carregamento de dados iniciais concluído.");
     }
 
-    private void inicializarComponentes() {
-        this.iconeEspacos = loadIcon("user.png");
-        this.iconeAgendas = loadIcon("calendar-day.png");
-        this.iconeHorariosDisponiveis = loadIcon("relogio-e-calendario.PNG");
-        if (this.iconeHorariosDisponiveis == null) {
-             this.iconeHorariosDisponiveis = loadIcon("calendar-day.png"); // Fallback
-        }
-        this.checkBoxesDiasSemana = new ArrayList<>();
-
-
-        this.listaDeEspacos = new java.util.ArrayList<>();
-        this.listaDeAgendamentos = new java.util.ArrayList<>();
-        this.listaDisponibilidades = new java.util.ArrayList<>();
-
-
-        this.listaDeEspacos = GerenciadorCSVDados.carregarEspacosDoCSV(ARQUIVO_ESPACOS_CSV);
-        this.listaDeAgendamentos = GerenciadorCSVDados.carregarAgendamentosDoCSV(ARQUIVO_AGENDAMENTOS_CSV, this.listaDeEspacos);
-        this.listaDisponibilidades = GerenciadorCSVDados.carregarDisponibilidadesDoCSV(ARQUIVO_DISPONIBILIDADES_CSV, this.listaDeEspacos);
-
-
+    // Método para inicializar e configurar todos os componentes visuais
+    private void inicializarComponentesVisuais() {
+        // Painel Principal com BorderLayout
         JPanel painelPrincipal = new JPanel(new BorderLayout());
-        painelPrincipal.setBackground(BRANCO);
+        painelPrincipal.setBackground(BRANCO); // Fundo geral, se visível
         setContentPane(painelPrincipal);
 
+        // === Sidebar (Painel Lateral Esquerdo) ===
         JPanel painelLateral = new JPanel();
         painelLateral.setLayout(new BoxLayout(painelLateral, BoxLayout.Y_AXIS));
         painelLateral.setBackground(VERDE_PRINCIPAL);
-        painelLateral.setPreferredSize(new Dimension(250, 0));
-        painelLateral.setBorder(BorderFactory.createEmptyBorder(15, 0, 15, 0));
+        painelLateral.setPreferredSize(new Dimension(260, 0)); // Largura da sidebar
+        painelLateral.setBorder(BorderFactory.createEmptyBorder(15, 0, 15, 0)); // Padding vertical
 
+        // Carregar Ícones para a Sidebar (já devem estar como campos da classe)
+        this.iconeEspacos = loadIcon("user.png"); // Usar "espaco.PNG" quando disponível e confirmado
+        this.iconeAgendas = loadIcon("calendar-day.png");
+        this.iconeHorariosDisponiveis = loadIcon("relogio-e-calendario.PNG"); // Usará se existir
+        this.iconeSair = loadIcon("leave.png");
+
+        // Botões da Sidebar
         JButton abaEspacosSidebar = new JButton("Espaços");
-        JButton abaAgendasSidebar = new JButton("Agendas");
-        JButton abaHorariosDisponiveis = new JButton("Disponibilidade");
-
         configurarBotaoSidebar(abaEspacosSidebar, this.iconeEspacos);
+
+        JButton abaAgendasSidebar = new JButton("Agendas");
         configurarBotaoSidebar(abaAgendasSidebar, this.iconeAgendas);
+
+        JButton abaHorariosDisponiveis = new JButton("Disponibilidade");
         configurarBotaoSidebar(abaHorariosDisponiveis, this.iconeHorariosDisponiveis);
 
-        abaEspacosSidebar.addActionListener(e -> {
-            boolean painelJaExiste = false;
-            for (Component comp : painelConteudo.getComponents()) {
-                if (comp.getName() != null && comp.getName().equals("painelEspacos")) {
-                    painelJaExiste = true;
-                    break;
-                }
-            }
-            if (!painelJaExiste) {
-                JPanel novoPainelEspacos = criarPainelEspacos();
-                novoPainelEspacos.setName("painelEspacos");
-                this.painelConteudo.add(novoPainelEspacos, "painelEspacos");
-            }
-            ((CardLayout) this.painelConteudo.getLayout()).show(this.painelConteudo, "painelEspacos");
+        JButton botaoSair = new JButton("Sair");
+        configurarBotaoSidebar(botaoSair, this.iconeSair);
+        botaoSair.addActionListener(e -> { // Ação de Sair já implementada aqui
+            dispose();
+            SwingUtilities.invokeLater(() -> new LoginUI().setVisible(true));
         });
 
-        abaAgendasSidebar.addActionListener(e -> {
-            boolean painelJaExiste = false;
-            for (Component comp : painelConteudo.getComponents()) {
-                if (comp.getName() != null && comp.getName().equals("painelAgendas")) {
-                    painelJaExiste = true;
-                    break;
-                }
-            }
-            if (!painelJaExiste) {
-                JPanel novoPainelAgendas = criarPainelAgendas();
-                novoPainelAgendas.setName("painelAgendas");
-                this.painelConteudo.add(novoPainelAgendas, "painelAgendas");
-            }
-            ((CardLayout) this.painelConteudo.getLayout()).show(this.painelConteudo, "painelAgendas");
-        });
+        // Adicionar componentes à sidebar
+        // Adicionar título "Menu" ou similar, se desejado (ex: JLabel)
+        JLabel labelMenuTitle = new JLabel("Menu Principal");
+        labelMenuTitle.setFont(new Font("Segoe UI", Font.BOLD, 20));
+        labelMenuTitle.setForeground(BRANCO);
+        labelMenuTitle.setAlignmentX(Component.CENTER_ALIGNMENT); // Centralizar se usar BoxLayout na direção X
+        labelMenuTitle.setBorder(new EmptyBorder(0,0,15,0)); // Margem inferior
+        // Para alinhar o label ao centro ou esquerda no BoxLayout Y_AXIS, pode precisar de um painel extra
+        // ou ajustar alinhamento X dos componentes.
+        // Por simplicidade, vamos alinhar os botões à esquerda e o título pode ficar assim.
 
-        abaHorariosDisponiveis.addActionListener(e -> {
-            final String NOME_PAINEL = "painelHorariosDisponiveis";
-            boolean painelJaExiste = false;
-            for (Component comp : painelConteudo.getComponents()) {
-                if (comp.getName() != null && comp.getName().equals(NOME_PAINEL)) {
-                    painelJaExiste = true;
-                    break;
-                }
-            }
-            if (!painelJaExiste) {
-                JPanel novoPainel = criarPainelHorariosDisponiveis();
-                novoPainel.setName(NOME_PAINEL);
-                this.painelConteudo.add(novoPainel, NOME_PAINEL);
-            }
-            ((CardLayout) this.painelConteudo.getLayout()).show(this.painelConteudo, NOME_PAINEL);
-        });
+        // painelLateral.add(labelMenuTitle); // Opcional: Título para a Sidebar
+
+        Dimension maxButtonSize = new Dimension(Integer.MAX_VALUE, abaEspacosSidebar.getPreferredSize().height + 10);
 
         abaEspacosSidebar.setAlignmentX(Component.LEFT_ALIGNMENT);
-        abaAgendasSidebar.setAlignmentX(Component.LEFT_ALIGNMENT);
-        abaHorariosDisponiveis.setAlignmentX(Component.LEFT_ALIGNMENT);
-
-        Dimension maxButtonSize = new Dimension(Integer.MAX_VALUE, abaEspacosSidebar.getPreferredSize().height);
         abaEspacosSidebar.setMaximumSize(maxButtonSize);
+
+        abaAgendasSidebar.setAlignmentX(Component.LEFT_ALIGNMENT);
         abaAgendasSidebar.setMaximumSize(maxButtonSize);
+
+        abaHorariosDisponiveis.setAlignmentX(Component.LEFT_ALIGNMENT);
         abaHorariosDisponiveis.setMaximumSize(maxButtonSize);
+
+        botaoSair.setAlignmentX(Component.LEFT_ALIGNMENT);
+        botaoSair.setMaximumSize(maxButtonSize);
 
         painelLateral.add(Box.createVerticalStrut(10));
         painelLateral.add(abaEspacosSidebar);
@@ -208,597 +176,99 @@ public class TelaPrincipalUI extends JFrame {
         painelLateral.add(Box.createVerticalStrut(10));
         painelLateral.add(abaHorariosDisponiveis);
 
-        ImageIcon iconeSairLocal = loadIcon("leave.png");
-        JButton botaoSair = new JButton("Sair");
-        configurarBotaoSidebar(botaoSair, iconeSairLocal);
-        botaoSair.setAlignmentX(Component.LEFT_ALIGNMENT);
-        botaoSair.setMaximumSize(maxButtonSize);
-
-        botaoSair.addActionListener(e -> {
-            dispose();
-            SwingUtilities.invokeLater(() -> {
-                LoginUI loginScreen = new LoginUI();
-                loginScreen.setVisible(true);
-            });
-        });
-
-        painelLateral.add(Box.createVerticalStrut(10));
+        painelLateral.add(Box.createVerticalGlue()); // Empurra 'Sair' para baixo
         painelLateral.add(botaoSair);
+        painelLateral.add(Box.createVerticalStrut(10)); // Espaço abaixo do botão Sair
 
-        painelLateral.add(Box.createVerticalGlue());
         painelPrincipal.add(painelLateral, BorderLayout.WEST);
 
+        // === Painel de Conteúdo Central (CardLayout) ===
         this.painelConteudo = new JPanel(new CardLayout());
-        this.painelConteudo.setBackground(BRANCO);
-        this.painelConteudo.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        this.painelConteudo.setBackground(BRANCO); // Fundo para a área de conteúdo
 
+        // Painel Default/Inicial
         JPanel painelDefault = new JPanel(new BorderLayout());
         painelDefault.setBackground(BRANCO);
-        JLabel labelDefault = new JLabel("Bem-vindo! Selecione uma opção na barra lateral.", SwingConstants.CENTER);
+        JLabel labelDefault = new JLabel("Bem-vindo ao Sistema de Agendamento! Selecione uma opção no menu.", SwingConstants.CENTER);
         labelDefault.setFont(new Font("Segoe UI", Font.PLAIN, 18));
         labelDefault.setForeground(CINZA_ESCURO);
         painelDefault.add(labelDefault, BorderLayout.CENTER);
-        this.painelConteudo.add(painelDefault, "painelDefault");
+        this.painelConteudo.add(painelDefault, "painelDefault"); // Adiciona com um nome
 
         painelPrincipal.add(this.painelConteudo, BorderLayout.CENTER);
-    }
 
-    private JPanel criarPainelEspacos() {
-        JPanel painel = new JPanel(new BorderLayout());
-        painel.setBackground(BRANCO);
-        painel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-
-        JLabel tituloEspacos = new JLabel("Gerenciamento de Espaços", SwingConstants.CENTER);
-        tituloEspacos.setFont(new Font("Segoe UI", Font.BOLD, 22));
-        tituloEspacos.setForeground(PRETO_SUAVE);
-        tituloEspacos.setBorder(BorderFactory.createEmptyBorder(0, 0, 15, 0));
-        painel.add(tituloEspacos, BorderLayout.NORTH);
-
-        JPanel painelCentralEspacos = new JPanel(new BorderLayout(0, 10));
-        painelCentralEspacos.setOpaque(false);
-
-        JPanel painelBotoesAcao = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
-        painelBotoesAcao.setOpaque(false);
-
-        JButton botaoNovoEspaco = new JButton("Novo Espaço");
-        botaoNovoEspaco.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        botaoNovoEspaco.setForeground(BRANCO);
-        botaoNovoEspaco.setBackground(VERDE_PRINCIPAL);
-        botaoNovoEspaco.setOpaque(true);
-        botaoNovoEspaco.setBorderPainted(false);
-        botaoNovoEspaco.setFocusPainted(false);
-        botaoNovoEspaco.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        botaoNovoEspaco.setMargin(new Insets(8, 15, 8, 15));
-
-        botaoNovoEspaco.addMouseListener(new java.awt.event.MouseAdapter() {
-            Color originalColor = botaoNovoEspaco.getBackground();
-            public void mouseEntered(java.awt.event.MouseEvent evt) {
-                botaoNovoEspaco.setBackground(originalColor.brighter());
-            }
-            public void mouseExited(java.awt.event.MouseEvent evt) {
-                botaoNovoEspaco.setBackground(originalColor);
-            }
+        // ActionListeners para abas (serão completados quando os métodos criarPainel... forem refeitos)
+        // Exemplo para abaEspacosSidebar (a lógica completa será refeita depois):
+        abaEspacosSidebar.addActionListener(e -> {
+            // ((CardLayout) this.painelConteudo.getLayout()).show(this.painelConteudo, "painelEspacos");
+            System.out.println("Botão Espaços clicado - painel será carregado no próximo passo.");
         });
-
-        botaoNovoEspaco.addActionListener(e -> {
-            FormularioEspacoDialog dialogoNovoEspaco = new FormularioEspacoDialog(
-                TelaPrincipalUI.this,
-                "Adicionar Novo Espaço",
-                null
-            );
-            dialogoNovoEspaco.setVisible(true);
-
-            Espaco espacoSalvo = dialogoNovoEspaco.getEspacoSalvo();
-
-            if (espacoSalvo != null) {
-                boolean jaExiste = false;
-                for(Espaco es : listaDeEspacos) {
-                    if(es.getId().equals(espacoSalvo.getId())) {
-                        jaExiste = true;
-                        es.setNome(espacoSalvo.getNome());
-                        es.setCapacidade(espacoSalvo.getCapacidade());
-                        es.setDescricao(espacoSalvo.getDescricao());
-                        break;
-                    }
+        abaAgendasSidebar.addActionListener(e -> {
+            System.out.println("Botão Agendas clicado - painel será carregado no próximo passo.");
+        });
+        abaHorariosDisponiveis.addActionListener(e -> {
+            final String NOME_PAINEL = "painelHorariosDisponiveis"; // Usar uma constante
+            // Verifica se o painel já existe no CardLayout
+            boolean painelJaExiste = false;
+            Component painelExistente = null;
+            for (Component comp : painelConteudo.getComponents()) {
+                if (comp.getName() != null && comp.getName().equals(NOME_PAINEL)) {
+                    painelJaExiste = true;
+                    painelExistente = comp; // Guarda referência se existir
+                    break;
                 }
+            }
 
-                if (!jaExiste) {
-                    this.listaDeEspacos.add(espacoSalvo);
-                }
-
-                atualizarTabelaEspacos();
-                System.out.println("Espaço salvo/atualizado: " + espacoSalvo.getNome());
-                GerenciadorCSVDados.salvarEspacosNoCSV(ARQUIVO_ESPACOS_CSV, this.listaDeEspacos);
-                atualizarComboBoxEspacosAgendamento();
+            if (!painelJaExiste) {
+                System.out.println("Criando novo painelHorariosDisponiveis...");
+                JPanel novoPainel = criarPainelHorariosDisponiveis();
+                novoPainel.setName(NOME_PAINEL);
+                this.painelConteudo.add(novoPainel, NOME_PAINEL);
+                ((CardLayout) this.painelConteudo.getLayout()).show(this.painelConteudo, NOME_PAINEL);
             } else {
-                 System.out.println("Criação de novo espaço cancelada ou diálogo fechado sem salvar.");
-            }
-        });
-
-        painelBotoesAcao.add(botaoNovoEspaco);
-        painelCentralEspacos.add(painelBotoesAcao, BorderLayout.NORTH);
-
-        String[] colunasTabela = {"Nome", "Capacidade", "Descrição", "Ações"};
-        this.modeloTabelaEspacos = new DefaultTableModel(colunasTabela, 0) {
-            @Override
-            public boolean isCellEditable(int row, int column) {
-                return column == (colunasTabela.length - 1);
-            }
-        };
-        JTable tabelaEspacos = new JTable(this.modeloTabelaEspacos);
-
-        tabelaEspacos.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        tabelaEspacos.setRowHeight(36);
-        tabelaEspacos.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 15));
-        tabelaEspacos.getTableHeader().setBackground(CINZA_CLARO);
-        tabelaEspacos.getTableHeader().setForeground(PRETO_SUAVE);
-        tabelaEspacos.setFillsViewportHeight(true);
-        tabelaEspacos.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-
-        int indiceColunaAcoes = this.modeloTabelaEspacos.getColumnCount() - 1;
-        if (indiceColunaAcoes >= 0 && this.modeloTabelaEspacos.getColumnName(indiceColunaAcoes).equals("Ações")) {
-            AcoesTabelaCellRendererEditor rendererEditor = new AcoesTabelaCellRendererEditor(tabelaEspacos);
-            tabelaEspacos.getColumnModel().getColumn(indiceColunaAcoes).setCellRenderer(rendererEditor);
-            tabelaEspacos.getColumnModel().getColumn(indiceColunaAcoes).setCellEditor(rendererEditor);
-
-            tabelaEspacos.getColumnModel().getColumn(indiceColunaAcoes).setPreferredWidth(85);
-            tabelaEspacos.getColumnModel().getColumn(indiceColunaAcoes).setMinWidth(80);
-            tabelaEspacos.getColumnModel().getColumn(indiceColunaAcoes).setMaxWidth(100);
-
-            rendererEditor.addActionListenerParaEditar(e -> {
-                int linhaSelecionadaVisual = tabelaEspacos.getSelectedRow();
-                if (linhaSelecionadaVisual != -1) {
-                    int linhaModelo = tabelaEspacos.convertRowIndexToModel(linhaSelecionadaVisual);
-                    editarEspaco(linhaModelo);
+                System.out.println("Painel painelHorariosDisponiveis já existe. Apenas mostrando.");
+                // Se o painel já existe, talvez seja necessário chamar um método para atualizar seus dados,
+                // como o ComboBox de espaços, caso a lista de espaços tenha mudado desde a última vez.
+                // Por exemplo: if (painelExistente instanceof JPanel) { /* lógica para atualizar dados */ }
+                // E também chamar atualizarTabelaDisponibilidades() para recarregar a tabela com o espaço selecionado.
+                if (this.comboBoxEspacosDisponibilidade != null && this.comboBoxEspacosDisponibilidade.getItemCount() > 0) {
+                     if(this.comboBoxEspacosDisponibilidade.getSelectedIndex() == -1) { // se nada estiver selecionado
+                        this.comboBoxEspacosDisponibilidade.setSelectedIndex(0); // seleciona o primeiro
+                     } else {
+                        // Força a atualização da tabela com base no item já selecionado
+                        atualizarTabelaDisponibilidades();
+                     }
                 } else {
-                    int linhaEditando = tabelaEspacos.getEditingRow();
-                    if (linhaEditando != -1) {
-                         int linhaModelo = tabelaEspacos.convertRowIndexToModel(linhaEditando);
-                         editarEspaco(linhaModelo);
-                    } else {
-                        JOptionPane.showMessageDialog(TelaPrincipalUI.this,
-                                                    "Por favor, selecione um espaço para editar.",
-                                                    "Aviso", JOptionPane.WARNING_MESSAGE);
-                    }
+                     // Se o combobox estiver vazio (ex: nenhum espaço cadastrado), limpa a tabela.
+                     if(this.modeloTabelaDisponibilidades != null) this.modeloTabelaDisponibilidades.setRowCount(0);
                 }
-            });
-
-            rendererEditor.addActionListenerParaExcluir(e -> {
-                int linhaSelecionadaVisual = tabelaEspacos.getSelectedRow();
-                if (linhaSelecionadaVisual != -1) {
-                    int linhaModelo = tabelaEspacos.convertRowIndexToModel(linhaSelecionadaVisual);
-                    excluirEspaco(linhaModelo);
-                } else {
-                    int linhaEditando = tabelaEspacos.getEditingRow();
-                     if (linhaEditando != -1) {
-                         int linhaModelo = tabelaEspacos.convertRowIndexToModel(linhaEditando);
-                         excluirEspaco(linhaModelo);
-                    } else {
-                        JOptionPane.showMessageDialog(TelaPrincipalUI.this,
-                                                    "Por favor, selecione um espaço para excluir.",
-                                                    "Aviso", JOptionPane.WARNING_MESSAGE);
-                    }
-                }
-            });
-        }
-
-        JScrollPane scrollPaneTabela = new JScrollPane(tabelaEspacos);
-        painelCentralEspacos.add(scrollPaneTabela, BorderLayout.CENTER);
-        painel.add(painelCentralEspacos, BorderLayout.CENTER);
-        atualizarTabelaEspacos();
-        return painel;
-    }
-
-    private java.util.Date parseData(String dataStr) {
-        try {
-            return new java.text.SimpleDateFormat("dd/MM/yyyy").parse(dataStr);
-        } catch (java.text.ParseException e) {
-            System.err.println("Erro ao parsear data: " + dataStr + " - " + e.getMessage());
-            return null;
-        }
-    }
-
-    private boolean isMesmaData(java.util.Date data1, java.util.Date data2) {
-        if (data1 == null || data2 == null) {
-            return false;
-        }
-        java.util.Calendar cal1 = java.util.Calendar.getInstance();
-        cal1.setTime(data1);
-        java.util.Calendar cal2 = java.util.Calendar.getInstance();
-        cal2.setTime(data2);
-        return cal1.get(java.util.Calendar.YEAR) == cal2.get(java.util.Calendar.YEAR) &&
-               cal1.get(java.util.Calendar.MONTH) == cal2.get(java.util.Calendar.MONTH) &&
-               cal1.get(java.util.Calendar.DAY_OF_MONTH) == cal2.get(java.util.Calendar.DAY_OF_MONTH);
-    }
-
-    private void atualizarTabelaEspacos() {
-        if (this.modeloTabelaEspacos == null) {
-            System.err.println("modeloTabelaEspacos ainda não foi inicializado!");
-            return;
-        }
-        this.modeloTabelaEspacos.setRowCount(0);
-        for (Espaco espaco : this.listaDeEspacos) {
-            this.modeloTabelaEspacos.addRow(new Object[]{
-                espaco.getNome(),
-                espaco.getCapacidade(),
-                espaco.getDescricao(),
-                null
-            });
-        }
-    }
-
-    private void editarEspaco(int linhaModelo) {
-        if (linhaModelo >= 0 && linhaModelo < listaDeEspacos.size()) {
-            Espaco espacoParaEditar = listaDeEspacos.get(linhaModelo);
-
-            FormularioEspacoDialog dialogoEditarEspaco = new FormularioEspacoDialog(
-                TelaPrincipalUI.this,
-                "Editar Espaço: " + espacoParaEditar.getNome(),
-                espacoParaEditar
-            );
-            dialogoEditarEspaco.setVisible(true);
-
-            Espaco espacoEditado = dialogoEditarEspaco.getEspacoSalvo();
-            if (dialogoEditarEspaco.isSalvoComSucesso() && espacoEditado != null) {
-                atualizarTabelaEspacos();
-                GerenciadorCSVDados.salvarEspacosNoCSV(ARQUIVO_ESPACOS_CSV, this.listaDeEspacos);
-                atualizarComboBoxEspacosAgendamento();
-                System.out.println("Espaço editado: " + espacoEditado.getNome());
-            } else {
-                System.out.println("Edição de espaço cancelada.");
-            }
-        } else {
-            System.err.println("Índice de linha inválido para edição: " + linhaModelo);
-        }
-    }
-
-    private void excluirEspaco(int linhaModelo) {
-        if (linhaModelo >= 0 && linhaModelo < listaDeEspacos.size()) {
-            Espaco espacoParaExcluir = listaDeEspacos.get(linhaModelo);
-            int confirmacao = JOptionPane.showConfirmDialog(
-                TelaPrincipalUI.this,
-                "Tem certeza que deseja excluir o espaço: " + espacoParaExcluir.getNome() + "?",
-                "Confirmar Exclusão",
-                JOptionPane.YES_NO_OPTION,
-                JOptionPane.WARNING_MESSAGE
-            );
-
-            if (confirmacao == JOptionPane.YES_OPTION) {
-                listaDeEspacos.remove(linhaModelo);
-                atualizarTabelaEspacos();
-                GerenciadorCSVDados.salvarEspacosNoCSV(ARQUIVO_ESPACOS_CSV, this.listaDeEspacos);
-                atualizarComboBoxEspacosAgendamento();
-                System.out.println("Espaço excluído: " + espacoParaExcluir.getNome());
-            } else {
-                System.out.println("Exclusão de espaço cancelada.");
-            }
-        } else {
-            System.err.println("Índice de linha inválido para exclusão: " + linhaModelo);
-        }
-    }
-
-    private JPanel criarPainelAgendas() {
-        JPanel painel = new JPanel(new BorderLayout());
-        painel.setBackground(BRANCO);
-        painel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-
-        JLabel tituloAgendas = new JLabel("Gerenciamento de Agendas", SwingConstants.CENTER);
-        tituloAgendas.setFont(new Font("Segoe UI", Font.BOLD, 22));
-        tituloAgendas.setForeground(PRETO_SUAVE);
-
-        JPanel painelControlesAgendamento = new JPanel(new GridBagLayout());
-        painelControlesAgendamento.setBackground(BRANCO);
-        painelControlesAgendamento.setBorder(BorderFactory.createTitledBorder(
-            BorderFactory.createEtchedBorder(), "Novo Agendamento",
-            javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION,
-            javax.swing.border.TitledBorder.DEFAULT_POSITION,
-            new Font("Segoe UI", Font.BOLD, 14), PRETO_SUAVE
-        ));
-        GridBagConstraints gbcControles = new GridBagConstraints();
-        gbcControles.insets = new Insets(5, 8, 5, 8);
-        gbcControles.anchor = GridBagConstraints.WEST;
-        gbcControles.fill = GridBagConstraints.HORIZONTAL;
-
-        gbcControles.gridx = 0;
-        gbcControles.gridy = 0;
-        JLabel labelSeletorEspaco = new JLabel("Espaço:");
-        labelSeletorEspaco.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        painelControlesAgendamento.add(labelSeletorEspaco, gbcControles);
-
-        gbcControles.gridx = 1;
-        gbcControles.gridwidth = 3;
-        this.comboBoxEspacosAgendamento = new JComboBox<>();
-        if (this.listaDeEspacos != null) {
-            for (Espaco esp : this.listaDeEspacos) {
-                this.comboBoxEspacosAgendamento.addItem(esp);
-            }
-        }
-        this.comboBoxEspacosAgendamento.setRenderer(new DefaultListCellRenderer() {
-            @Override
-            public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
-                super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
-                if (value instanceof Espaco) {
-                    setText(((Espaco) value).getNome());
-                }
-                return this;
+                ((CardLayout) this.painelConteudo.getLayout()).show(this.painelConteudo, NOME_PAINEL);
             }
         });
-        this.comboBoxEspacosAgendamento.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        this.comboBoxEspacosAgendamento.addActionListener(e -> {
-            atualizarTabelaAgendamentos();
-        });
-        painelControlesAgendamento.add(this.comboBoxEspacosAgendamento, gbcControles);
-        gbcControles.gridwidth = 1;
 
-        gbcControles.gridx = 0;
-        gbcControles.gridy = 1;
-        JLabel labelData = new JLabel("Data (dd/mm/aaaa):");
-        labelData.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        painelControlesAgendamento.add(labelData, gbcControles);
-
-        gbcControles.gridx = 1;
-        try {
-            javax.swing.text.MaskFormatter mascaraData = new javax.swing.text.MaskFormatter("##/##/####");
-            mascaraData.setPlaceholderCharacter('_');
-            this.campoDataAgendamento = new JFormattedTextField(mascaraData);
-            this.campoDataAgendamento.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-            this.campoDataAgendamento.setColumns(8);
-        } catch (java.text.ParseException e) {
-            e.printStackTrace();
-            this.campoDataAgendamento = new JFormattedTextField();
-        }
-        painelControlesAgendamento.add(this.campoDataAgendamento, gbcControles);
-
-        gbcControles.gridx = 0;
-        gbcControles.gridy = 2;
-        JLabel labelHoraInicio = new JLabel("Hora Início (HH:mm):");
-        labelHoraInicio.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        painelControlesAgendamento.add(labelHoraInicio, gbcControles);
-
-        gbcControles.gridx = 1;
-        this.spinnerHoraInicioAgendamento = new JSpinner(new SpinnerDateModel());
-        JSpinner.DateEditor editorHoraInicio = new JSpinner.DateEditor(this.spinnerHoraInicioAgendamento, "HH:mm");
-        this.spinnerHoraInicioAgendamento.setEditor(editorHoraInicio);
-        this.spinnerHoraInicioAgendamento.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        java.util.Calendar calInicio = java.util.Calendar.getInstance();
-        calInicio.set(java.util.Calendar.HOUR_OF_DAY, 8);
-        calInicio.set(java.util.Calendar.MINUTE, 0);
-        this.spinnerHoraInicioAgendamento.setValue(calInicio.getTime());
-        painelControlesAgendamento.add(this.spinnerHoraInicioAgendamento, gbcControles);
-
-        gbcControles.gridx = 2;
-        gbcControles.anchor = GridBagConstraints.EAST;
-        JLabel labelHoraFim = new JLabel("Hora Fim (HH:mm):");
-        labelHoraFim.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        painelControlesAgendamento.add(labelHoraFim, gbcControles);
-        gbcControles.anchor = GridBagConstraints.WEST;
-
-        gbcControles.gridx = 3;
-        this.spinnerHoraFimAgendamento = new JSpinner(new SpinnerDateModel());
-        JSpinner.DateEditor editorHoraFim = new JSpinner.DateEditor(this.spinnerHoraFimAgendamento, "HH:mm");
-        this.spinnerHoraFimAgendamento.setEditor(editorHoraFim);
-        this.spinnerHoraFimAgendamento.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        java.util.Calendar calFim = java.util.Calendar.getInstance();
-        calFim.set(java.util.Calendar.HOUR_OF_DAY, 9);
-        calFim.set(java.util.Calendar.MINUTE, 0);
-        this.spinnerHoraFimAgendamento.setValue(calFim.getTime());
-        painelControlesAgendamento.add(this.spinnerHoraFimAgendamento, gbcControles);
-
-        gbcControles.gridx = 0;
-        gbcControles.gridy = 3;
-        gbcControles.gridwidth = 4;
-        gbcControles.anchor = GridBagConstraints.CENTER;
-        gbcControles.fill = GridBagConstraints.NONE;
-        JButton botaoAdicionarHorario = new JButton("Adicionar Horário");
-        botaoAdicionarHorario.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        botaoAdicionarHorario.setForeground(BRANCO);
-        botaoAdicionarHorario.setBackground(VERDE_PRINCIPAL);
-        botaoAdicionarHorario.setOpaque(true);
-        botaoAdicionarHorario.setBorderPainted(false);
-        botaoAdicionarHorario.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        botaoAdicionarHorario.setMargin(new Insets(8, 15, 8, 15));
-        botaoAdicionarHorario.addActionListener(e -> {
-            Espaco espacoSelecionado = (Espaco) this.comboBoxEspacosAgendamento.getSelectedItem();
-            String dataStr = this.campoDataAgendamento.getText();
-            Date horaInicioSelecionada = (Date) this.spinnerHoraInicioAgendamento.getValue();
-            Date horaFimSelecionada = (Date) this.spinnerHoraFimAgendamento.getValue();
-
-            if (espacoSelecionado == null) {
-                JOptionPane.showMessageDialog(TelaPrincipalUI.this, "Por favor, selecione um espaço.", "Erro de Validação", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-            if (dataStr.trim().replace("_", "").isEmpty() || dataStr.trim().length() != 10) {
-                JOptionPane.showMessageDialog(TelaPrincipalUI.this, "Por favor, insira uma data válida (dd/mm/aaaa).", "Erro de Validação", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-            Date dataSelecionada = parseData(dataStr);
-            if (dataSelecionada == null) {
-                JOptionPane.showMessageDialog(TelaPrincipalUI.this, "Formato de data inválido. Use dd/mm/aaaa.", "Erro de Validação", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-
-            java.util.Calendar calendarioDataBase = java.util.Calendar.getInstance();
-            calendarioDataBase.setTime(dataSelecionada);
-
-            java.util.Calendar calendarioAgendInicio = java.util.Calendar.getInstance();
-            calendarioAgendInicio.setTime(horaInicioSelecionada);
-            calendarioAgendInicio.set(java.util.Calendar.YEAR, calendarioDataBase.get(java.util.Calendar.YEAR));
-            calendarioAgendInicio.set(java.util.Calendar.MONTH, calendarioDataBase.get(java.util.Calendar.MONTH));
-            calendarioAgendInicio.set(java.util.Calendar.DAY_OF_MONTH, calendarioDataBase.get(java.util.Calendar.DAY_OF_MONTH));
-            Date horaInicioFinal = calendarioAgendInicio.getTime();
-
-            java.util.Calendar calendarioAgendFim = java.util.Calendar.getInstance();
-            calendarioAgendFim.setTime(horaFimSelecionada);
-            calendarioAgendFim.set(java.util.Calendar.YEAR, calendarioDataBase.get(java.util.Calendar.YEAR));
-            calendarioAgendFim.set(java.util.Calendar.MONTH, calendarioDataBase.get(java.util.Calendar.MONTH));
-            calendarioAgendFim.set(java.util.Calendar.DAY_OF_MONTH, calendarioDataBase.get(java.util.Calendar.DAY_OF_MONTH));
-            Date horaFimFinal = calendarioAgendFim.getTime();
-
-            if (horaFimFinal.before(horaInicioFinal) || horaFimFinal.equals(horaInicioFinal)) {
-                JOptionPane.showMessageDialog(TelaPrincipalUI.this, "A hora de fim deve ser posterior à hora de início.", "Erro de Validação", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-
-            for (Agendamento ag : this.listaDeAgendamentos) {
-                if (ag.getEspaco().getId().equals(espacoSelecionado.getId()) &&
-                    isMesmaData(ag.getData(), dataSelecionada)) {
-                    if (horaInicioFinal.before(ag.getHoraFim()) && horaFimFinal.after(ag.getHoraInicio())) {
-                        JOptionPane.showMessageDialog(TelaPrincipalUI.this,
-                            "Conflito de horário! Já existe um agendamento para este espaço neste período.",
-                            "Erro de Validação", JOptionPane.ERROR_MESSAGE);
-                        return;
-                    }
-                }
-            }
-
-            Agendamento novoAgendamento = new Agendamento(espacoSelecionado, dataSelecionada, horaInicioFinal, horaFimFinal);
-            this.listaDeAgendamentos.add(novoAgendamento);
-            atualizarTabelaAgendamentos();
-            JOptionPane.showMessageDialog(TelaPrincipalUI.this, "Agendamento adicionado com sucesso!", "Sucesso", JOptionPane.INFORMATION_MESSAGE);
-            GerenciadorCSVDados.salvarAgendamentosNoCSV(ARQUIVO_AGENDAMENTOS_CSV, this.listaDeAgendamentos);
-        });
-        painelControlesAgendamento.add(botaoAdicionarHorario, gbcControles);
-
-        JPanel painelSuperiorAgendas = new JPanel(new BorderLayout());
-        painelSuperiorAgendas.setOpaque(false);
-        tituloAgendas.setBorder(BorderFactory.createEmptyBorder(0, 0, 15, 0));
-        painelSuperiorAgendas.add(tituloAgendas, BorderLayout.NORTH);
-        painelSuperiorAgendas.add(painelControlesAgendamento, BorderLayout.CENTER);
-
-        painel.add(painelSuperiorAgendas, BorderLayout.NORTH);
-
-        String[] colunasTabelaAgendamentos = {"Espaço", "Data", "Hora Início", "Hora Fim", "Ações"};
-        this.modeloTabelaAgendamentos = new DefaultTableModel(colunasTabelaAgendamentos, 0) {
-            @Override
-            public boolean isCellEditable(int row, int column) {
-                return column == (colunasTabelaAgendamentos.length - 1);
-            }
-        };
-        JTable tabelaAgendamentos = new JTable(this.modeloTabelaAgendamentos);
-
-        tabelaAgendamentos.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        tabelaAgendamentos.setRowHeight(30);
-        tabelaAgendamentos.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 15));
-        tabelaAgendamentos.getTableHeader().setBackground(CINZA_CLARO);
-        tabelaAgendamentos.getTableHeader().setForeground(PRETO_SUAVE);
-        tabelaAgendamentos.setFillsViewportHeight(true);
-        tabelaAgendamentos.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-
-        int indiceColunaAcoesAgend = this.modeloTabelaAgendamentos.getColumnCount() - 1;
-        if (indiceColunaAcoesAgend >= 0 && this.modeloTabelaAgendamentos.getColumnName(indiceColunaAcoesAgend).equals("Ações")) {
-
-            AcoesTabelaCellRendererEditor rendererEditorAgend = new AcoesTabelaCellRendererEditor(tabelaAgendamentos);
-            tabelaAgendamentos.getColumnModel().getColumn(indiceColunaAcoesAgend).setCellRenderer(rendererEditorAgend);
-            tabelaAgendamentos.getColumnModel().getColumn(indiceColunaAcoesAgend).setCellEditor(rendererEditorAgend);
-
-            tabelaAgendamentos.getColumnModel().getColumn(indiceColunaAcoesAgend).setPreferredWidth(85);
-            tabelaAgendamentos.getColumnModel().getColumn(indiceColunaAcoesAgend).setMinWidth(80);
-            tabelaAgendamentos.getColumnModel().getColumn(indiceColunaAcoesAgend).setMaxWidth(100);
-
-            rendererEditorAgend.addActionListenerParaExcluir(e -> {
-                int linhaSelecionadaVisual = tabelaAgendamentos.getSelectedRow();
-                if (linhaSelecionadaVisual != -1) {
-                    int linhaModelo = tabelaAgendamentos.convertRowIndexToModel(linhaSelecionadaVisual);
-                    removerAgendamento(linhaModelo);
-                } else {
-                    int linhaEditando = tabelaAgendamentos.getEditingRow();
-                    if (linhaEditando != -1) {
-                        int linhaModelo = tabelaAgendamentos.convertRowIndexToModel(linhaEditando);
-                        removerAgendamento(linhaModelo);
-                    } else {
-                        JOptionPane.showMessageDialog(TelaPrincipalUI.this,
-                                                    "Por favor, selecione um agendamento para remover.",
-                                                    "Aviso", JOptionPane.WARNING_MESSAGE);
-                    }
-                }
-            });
-
-            rendererEditorAgend.addActionListenerParaEditar(e -> {
-                 JOptionPane.showMessageDialog(TelaPrincipalUI.this,
-                                                    "A edição de agendamentos não está implementada nesta tabela.",
-                                                    "Informação", JOptionPane.INFORMATION_MESSAGE);
-            });
-        }
-
-        JScrollPane scrollPaneTabelaAgendamentos = new JScrollPane(tabelaAgendamentos);
-        painel.add(scrollPaneTabelaAgendamentos, BorderLayout.CENTER);
-
-        return painel;
+        // Mostrar painel default inicialmente
+        ((CardLayout) this.painelConteudo.getLayout()).show(this.painelConteudo, "painelDefault");
     }
 
-    private void atualizarTabelaAgendamentos() {
-        if (this.modeloTabelaAgendamentos == null) {
-            System.err.println("modeloTabelaAgendamentos ainda não foi inicializado!");
-            return;
-        }
-        this.modeloTabelaAgendamentos.setRowCount(0);
-
-        Espaco espacoFiltrar = null;
-        if (this.comboBoxEspacosAgendamento != null && this.comboBoxEspacosAgendamento.getSelectedItem() instanceof Espaco) {
-            espacoFiltrar = (Espaco) this.comboBoxEspacosAgendamento.getSelectedItem();
-        }
-
-        for (Agendamento ag : this.listaDeAgendamentos) {
-            boolean deveAdicionar = true;
-            if (espacoFiltrar != null) {
-                if (!ag.getEspaco().getId().equals(espacoFiltrar.getId())) {
-                    deveAdicionar = false;
-                }
-            }
-            if (deveAdicionar) {
-                this.modeloTabelaAgendamentos.addRow(new Object[]{
-                    ag.getEspaco().getNome(),
-                    ag.getDataFormatada(),
-                    ag.getHoraInicioFormatada(),
-                    ag.getHoraFimFormatada(),
-                    null
-                });
-            }
-        }
-    }
-
-    private void removerAgendamento(int linhaModelo) {
-        if (linhaModelo >= 0 && linhaModelo < listaDeAgendamentos.size()) {
-            Agendamento agendamentoParaRemover = listaDeAgendamentos.get(linhaModelo);
-            int confirmacao = JOptionPane.showConfirmDialog(
-                TelaPrincipalUI.this,
-                "Tem certeza que deseja remover o agendamento para o espaço: " +
-                agendamentoParaRemover.getEspaco().getNome() + " em " +
-                agendamentoParaRemover.getDataFormatada() + " de " +
-                agendamentoParaRemover.getHoraInicioFormatada() + " às " +
-                agendamentoParaRemover.getHoraFimFormatada() + "?",
-                "Confirmar Remoção de Horário",
-                JOptionPane.YES_NO_OPTION,
-                JOptionPane.WARNING_MESSAGE
-            );
-
-            if (confirmacao == JOptionPane.YES_OPTION) {
-                listaDeAgendamentos.remove(linhaModelo);
-                atualizarTabelaAgendamentos();
-                GerenciadorCSVDados.salvarAgendamentosNoCSV(ARQUIVO_AGENDAMENTOS_CSV, this.listaDeAgendamentos);
-                System.out.println("Agendamento removido.");
-            } else {
-                System.out.println("Remoção de agendamento cancelada.");
-            }
-        } else {
-            System.err.println("Índice de linha inválido para remoção de agendamento: " + linhaModelo);
-        }
-    }
-
+    // Método para configurar o estilo dos botões da Sidebar
     private void configurarBotaoSidebar(JButton botao, ImageIcon icone) {
         botao.setFont(new Font("Segoe UI", Font.BOLD, 16));
         botao.setForeground(BRANCO);
         botao.setBackground(VERDE_PRINCIPAL);
-        botao.setOpaque(false);
+        botao.setOpaque(false); // Controla o fundo no hover
         botao.setFocusPainted(false);
         botao.setBorderPainted(false);
         botao.setCursor(new Cursor(Cursor.HAND_CURSOR));
         botao.setHorizontalAlignment(SwingConstants.LEFT);
         botao.setIconTextGap(15);
-        botao.setMargin(new Insets(10, 15, 10, 15));
+        botao.setMargin(new Insets(10, 15, 10, 15)); // Padding interno
 
         if (icone != null) {
             botao.setIcon(new ImageIcon(icone.getImage().getScaledInstance(22, 22, Image.SCALE_SMOOTH)));
+        } else {
+            // Adiciona um placeholder ou um ícone padrão se o ícone específico não for carregado
+            // Ex: botao.setIcon(loadIcon("default_icon.png"));
+            // Por enquanto, deixamos sem ícone se for null
         }
 
         botao.addMouseListener(new java.awt.event.MouseAdapter() {
@@ -806,7 +276,6 @@ public class TelaPrincipalUI extends JFrame {
                 botao.setOpaque(true);
                 botao.setBackground(VERDE_PRINCIPAL.brighter().brighter());
             }
-
             public void mouseExited(java.awt.event.MouseEvent evt) {
                 botao.setOpaque(false);
                 botao.setBackground(VERDE_PRINCIPAL);
@@ -814,33 +283,8 @@ public class TelaPrincipalUI extends JFrame {
         });
     }
 
-    private void atualizarComboBoxEspacosAgendamento() {
-        if (this.comboBoxEspacosAgendamento == null) {
-            return;
-        }
-        Object itemSelecionadoAnteriormente = this.comboBoxEspacosAgendamento.getSelectedItem();
-        this.comboBoxEspacosAgendamento.removeAllItems();
-        if (this.listaDeEspacos != null) {
-            for (Espaco esp : this.listaDeEspacos) {
-                this.comboBoxEspacosAgendamento.addItem(esp);
-            }
-        }
-        if (itemSelecionadoAnteriormente instanceof Espaco) {
-            Espaco espacoAnterior = (Espaco) itemSelecionadoAnteriormente;
-            for (int i = 0; i < this.comboBoxEspacosAgendamento.getItemCount(); i++) {
-                Espaco itemAtual = this.comboBoxEspacosAgendamento.getItemAt(i);
-                if (itemAtual != null && itemAtual.getId().equals(espacoAnterior.getId())) {
-                    this.comboBoxEspacosAgendamento.setSelectedIndex(i);
-                    break;
-                }
-            }
-        } else if (this.comboBoxEspacosAgendamento.getItemCount() > 0) {
-            this.comboBoxEspacosAgendamento.setSelectedIndex(0);
-        }
-        atualizarTabelaAgendamentos();
-    }
-
     private JPanel criarPainelHorariosDisponiveis() {
+        System.out.println(">>> Iniciando criarPainelHorariosDisponiveis()...");
         JPanel painelPrincipalAba = new JPanel(new BorderLayout(10, 10));
         painelPrincipalAba.setBackground(BRANCO);
         painelPrincipalAba.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
@@ -849,12 +293,13 @@ public class TelaPrincipalUI extends JFrame {
         tituloHorarios.setFont(new Font("Segoe UI", Font.BOLD, 22));
         tituloHorarios.setForeground(PRETO_SUAVE);
         tituloHorarios.setBorder(BorderFactory.createEmptyBorder(0, 0, 20, 0));
-        painelPrincipalAba.add(tituloHorarios, BorderLayout.NORTH);
+        // painelPrincipalAba.add(tituloHorarios, BorderLayout.NORTH); // Título será adicionado em painelSuperior
 
+        // Painel de Controles para adicionar/editar disponibilidade
         JPanel painelControles = new JPanel(new GridBagLayout());
         painelControles.setBackground(BRANCO);
         painelControles.setBorder(BorderFactory.createTitledBorder(
-            BorderFactory.createEtchedBorder(), "Definir Disponibilidade",
+            BorderFactory.createEtchedBorder(), "Definir Nova Disponibilidade",
             javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION,
             javax.swing.border.TitledBorder.DEFAULT_POSITION,
             new Font("Segoe UI", Font.BOLD, 14), PRETO_SUAVE
@@ -864,15 +309,28 @@ public class TelaPrincipalUI extends JFrame {
         gbc.anchor = GridBagConstraints.WEST;
         gbc.fill = GridBagConstraints.HORIZONTAL;
 
+        // Seletor de Espaço
         gbc.gridx = 0; gbc.gridy = 0;
+        gbc.weightx = 0.1; // Label com menos peso
         painelControles.add(new JLabel("Espaço:"), gbc);
         gbc.gridx = 1; gbc.gridwidth = 3;
-        this.comboBoxEspacosDisponibilidade = new JComboBox<>();
-        if (this.listaDeEspacos != null) {
+        gbc.weightx = 0.9; // ComboBox com mais peso
+        this.comboBoxEspacosDisponibilidade = new JComboBox<>(); // Campo da classe
+        // Logs para depuração da população do ComboBox (serão adicionados/verificados no Passo 5 do plano)
+        System.out.println("Verificando listaDeEspacos para ComboBox de Disponibilidade (em criarPainelHorariosDisponiveis)...");
+        if (this.listaDeEspacos == null) {
+            System.out.println("!!! listaDeEspacos é NULA ao criar comboBoxEspacosDisponibilidade.");
+        } else {
+            System.out.println("Nº de espaços em listaDeEspacos: " + this.listaDeEspacos.size());
+            if (this.listaDeEspacos.isEmpty()) {
+                System.out.println("--- listaDeEspacos está VAZIA ao criar comboBoxEspacosDisponibilidade.");
+            }
             for (Espaco esp : this.listaDeEspacos) {
-                this.comboBoxEspacosDisponibilidade.addItem(esp);
+                if (esp != null) this.comboBoxEspacosDisponibilidade.addItem(esp);
             }
         }
+        System.out.println("Nº de itens no comboBoxEspacosDisponibilidade: " + this.comboBoxEspacosDisponibilidade.getItemCount());
+
         this.comboBoxEspacosDisponibilidade.setRenderer(new DefaultListCellRenderer() {
             @Override
             public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
@@ -882,18 +340,19 @@ public class TelaPrincipalUI extends JFrame {
             }
         });
         this.comboBoxEspacosDisponibilidade.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        this.comboBoxEspacosDisponibilidade.addActionListener(e -> atualizarTabelaDisponibilidades());
+        this.comboBoxEspacosDisponibilidade.addActionListener(e -> atualizarTabelaDisponibilidades()); // Chama método a ser implementado
         painelControles.add(this.comboBoxEspacosDisponibilidade, gbc);
-        gbc.gridwidth = 1;
+        gbc.gridwidth = 1; gbc.weightx = 0; // Reset
 
+        // Dias da Semana (Checkboxes)
         gbc.gridx = 0; gbc.gridy = 1;
         painelControles.add(new JLabel("Dias da Semana:"), gbc);
-        JPanel painelDiasSemana = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
+        JPanel painelDiasSemana = new JPanel(new FlowLayout(FlowLayout.LEFT, 3, 0)); // Diminuído espaçamento
         painelDiasSemana.setBackground(BRANCO);
         this.checkBoxesDiasSemana.clear();
         for (DiaDaSemana dia : DiaDaSemana.values()) {
             JCheckBox checkBox = new JCheckBox(dia.getNomeFormatado().substring(0, 3));
-            checkBox.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+            checkBox.setFont(new Font("Segoe UI", Font.PLAIN, 11)); // Fonte menor
             checkBox.setBackground(BRANCO);
             checkBox.setName(dia.name());
             this.checkBoxesDiasSemana.add(checkBox);
@@ -903,69 +362,88 @@ public class TelaPrincipalUI extends JFrame {
         painelControles.add(painelDiasSemana, gbc);
         gbc.gridwidth = 1;
 
+        // Hora Início Disponível
         gbc.gridx = 0; gbc.gridy = 2;
         painelControles.add(new JLabel("Das:"), gbc);
         gbc.gridx = 1;
-        this.spinnerHoraInicioDisp = new JSpinner(new SpinnerDateModel());
+        this.spinnerHoraInicioDisp = new JSpinner(new SpinnerDateModel()); // Campo da classe
         JSpinner.DateEditor editorInicioDisp = new JSpinner.DateEditor(this.spinnerHoraInicioDisp, "HH:mm");
         this.spinnerHoraInicioDisp.setEditor(editorInicioDisp);
         this.spinnerHoraInicioDisp.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         ((JSpinner.DefaultEditor)this.spinnerHoraInicioDisp.getEditor()).getTextField().setColumns(4);
         painelControles.add(this.spinnerHoraInicioDisp, gbc);
 
+        // Hora Fim Disponível
         gbc.gridx = 2;
         painelControles.add(new JLabel("Até:"), gbc);
         gbc.gridx = 3;
-        this.spinnerHoraFimDisp = new JSpinner(new SpinnerDateModel());
+        this.spinnerHoraFimDisp = new JSpinner(new SpinnerDateModel()); // Campo da classe
         JSpinner.DateEditor editorFimDisp = new JSpinner.DateEditor(this.spinnerHoraFimDisp, "HH:mm");
         this.spinnerHoraFimDisp.setEditor(editorFimDisp);
         this.spinnerHoraFimDisp.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         ((JSpinner.DefaultEditor)this.spinnerHoraFimDisp.getEditor()).getTextField().setColumns(4);
         painelControles.add(this.spinnerHoraFimDisp, gbc);
 
+        // Botão Salvar Disponibilidade
         gbc.gridx = 0; gbc.gridy = 3; gbc.gridwidth = 4;
-        gbc.anchor = GridBagConstraints.CENTER; gbc.fill = GridBagConstraints.NONE;
+        gbc.anchor = GridBagConstraints.EAST; gbc.fill = GridBagConstraints.NONE; // Alinhado à direita
+        gbc.insets = new Insets(10, 8, 5, 8); // Mais margem superior
         JButton botaoSalvarDisponibilidade = new JButton("Salvar Disponibilidade");
-
+        botaoSalvarDisponibilidade.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        botaoSalvarDisponibilidade.setForeground(BRANCO);
+        botaoSalvarDisponibilidade.setBackground(VERDE_PRINCIPAL);
+        botaoSalvarDisponibilidade.setOpaque(true);
+        botaoSalvarDisponibilidade.setBorderPainted(false);
         botaoSalvarDisponibilidade.addActionListener(e -> {
+            System.out.println(">>> Botão Salvar Disponibilidade clicado.");
             Espaco espacoSelecionado = (Espaco) this.comboBoxEspacosDisponibilidade.getSelectedItem();
             if (espacoSelecionado == null) {
-                JOptionPane.showMessageDialog(this, "Por favor, selecione um espaço.", "Validação", JOptionPane.WARNING_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Por favor, selecione um espaço para definir a disponibilidade.", "Validação - Espaço", JOptionPane.WARNING_MESSAGE);
+                System.out.println("Nenhum espaço selecionado.");
                 return;
             }
+            System.out.println("Espaço selecionado para salvar disponibilidade: " + espacoSelecionado.getNome());
 
-            Date horaInicio = (Date) this.spinnerHoraInicioDisp.getValue();
-            Date horaFim = (Date) this.spinnerHoraFimDisp.getValue();
+            Date horaInicioInput = (Date) this.spinnerHoraInicioDisp.getValue();
+            Date horaFimInput = (Date) this.spinnerHoraFimDisp.getValue();
 
-            Calendar calTemp = Calendar.getInstance();
+            // Normalizar as horas para uma data base (01/01/1970) para consistência no armazenamento e comparação
+            Calendar calHelper = Calendar.getInstance();
 
-            calTemp.setTime(horaInicio);
-            calTemp.set(Calendar.YEAR, 1970);
-            calTemp.set(Calendar.MONTH, Calendar.JANUARY);
-            calTemp.set(Calendar.DAY_OF_MONTH, 1);
-            Date horaInicioNormalizada = calTemp.getTime();
+            calHelper.setTime(horaInicioInput);
+            calHelper.set(1970, Calendar.JANUARY, 1); // Ano, Mês (Janeiro=0), Dia
+            Date horaInicioNormalizada = calHelper.getTime();
 
-            calTemp.setTime(horaFim);
-            calTemp.set(Calendar.YEAR, 1970);
-            calTemp.set(Calendar.MONTH, Calendar.JANUARY);
-            calTemp.set(Calendar.DAY_OF_MONTH, 1);
-            Date horaFimNormalizada = calTemp.getTime();
+            calHelper.setTime(horaFimInput);
+            calHelper.set(1970, Calendar.JANUARY, 1);
+            Date horaFimNormalizada = calHelper.getTime();
+
+            System.out.println("Hora Início Normalizada: " + new SimpleDateFormat("HH:mm").format(horaInicioNormalizada) +
+                               ", Hora Fim Normalizada: " + new SimpleDateFormat("HH:mm").format(horaFimNormalizada));
+
 
             if (horaFimNormalizada.before(horaInicioNormalizada) || horaFimNormalizada.equals(horaInicioNormalizada)) {
-                JOptionPane.showMessageDialog(this, "A hora de fim da disponibilidade deve ser posterior à hora de início.", "Validação", JOptionPane.WARNING_MESSAGE);
+                JOptionPane.showMessageDialog(this, "A hora de fim da disponibilidade deve ser estritamente posterior à hora de início.", "Validação - Horário", JOptionPane.WARNING_MESSAGE);
+                System.out.println("Validação de horário falhou: Fim <= Início.");
                 return;
             }
 
             boolean algumDiaSelecionado = false;
+            int disponibilidadesProcessadas = 0;
             for (JCheckBox checkBoxDia : this.checkBoxesDiasSemana) {
                 if (checkBoxDia.isSelected()) {
                     algumDiaSelecionado = true;
-                    DiaDaSemana dia = DiaDaSemana.fromString(checkBoxDia.getName());
+                    DiaDaSemana dia = DiaDaSemana.fromString(checkBoxDia.getName()); // Recupera o enum pelo nome do componente
 
                     if (dia != null) {
-                        this.listaDisponibilidades.removeIf(disp ->
+                        System.out.println("Processando disponibilidade para o dia: " + dia.getNomeFormatado());
+                        // Lógica "última configuração ganha": remove qualquer disponibilidade existente para este espaço e dia.
+                        boolean removidoExistente = this.listaDisponibilidades.removeIf(disp ->
                             disp.getEspaco().getId().equals(espacoSelecionado.getId()) &&
                             disp.getDiaDaSemana() == dia);
+                        if (removidoExistente) {
+                            System.out.println("Disponibilidade existente removida para " + espacoSelecionado.getNome() + " na " + dia.getNomeFormatado());
+                        }
 
                         DisponibilidadeEspaco novaDisp = new DisponibilidadeEspaco(
                             espacoSelecionado,
@@ -974,111 +452,273 @@ public class TelaPrincipalUI extends JFrame {
                             horaFimNormalizada
                         );
                         this.listaDisponibilidades.add(novaDisp);
+                        disponibilidadesProcessadas++;
+                        System.out.println("Nova disponibilidade adicionada: " + novaDisp.toString());
+                    } else {
+                        System.err.println("Erro: DiaDaSemana.fromString retornou null para o checkbox: " + checkBoxDia.getName());
                     }
                 }
             }
 
             if (!algumDiaSelecionado) {
-                JOptionPane.showMessageDialog(this, "Por favor, selecione pelo menos um dia da semana.", "Validação", JOptionPane.WARNING_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Por favor, selecione pelo menos um dia da semana para definir a disponibilidade.", "Validação - Dias", JOptionPane.WARNING_MESSAGE);
+                System.out.println("Nenhum dia da semana selecionado.");
                 return;
             }
 
-            GerenciadorCSVDados.salvarDisponibilidadesNoCSV(ARQUIVO_DISPONIBILIDADES_CSV, this.listaDisponibilidades);
-            atualizarTabelaDisponibilidades();
+            if (disponibilidadesProcessadas > 0) {
+                System.out.println(disponibilidadesProcessadas + " registros de disponibilidade foram adicionados/atualizados na lista em memória.");
+                GerenciadorCSVDados.salvarDisponibilidadesNoCSV(ARQUIVO_DISPONIBILIDADES_CSV, this.listaDisponibilidades);
+                atualizarTabelaDisponibilidades();
+                JOptionPane.showMessageDialog(this, "Disponibilidade(s) salva(s) com sucesso!", "Sucesso", JOptionPane.INFORMATION_MESSAGE);
+                System.out.println("Disponibilidades salvas no CSV e tabela atualizada.");
 
-            JOptionPane.showMessageDialog(this, "Disponibilidade salva com sucesso!", "Sucesso", JOptionPane.INFORMATION_MESSAGE);
-
-            for (JCheckBox checkBoxDia : this.checkBoxesDiasSemana) {
-                checkBoxDia.setSelected(false);
+                // Limpar checkboxes dos dias após salvar
+                for (JCheckBox checkBoxDia : this.checkBoxesDiasSemana) {
+                    checkBoxDia.setSelected(false);
+                }
+                System.out.println("Checkboxes de dias da semana limpos.");
+            } else {
+                // Isso pode acontecer se os dias selecionados resultarem em dia==null, o que não deveria.
+                System.out.println("Nenhuma disponibilidade foi processada para salvamento (verifique logs de erro de DiaDaSemana).");
             }
+            System.out.println("<<< ActionListener Salvar Disponibilidade concluído.");
         });
         painelControles.add(botaoSalvarDisponibilidade, gbc);
+        gbc.anchor = GridBagConstraints.WEST; // Reset
 
+        // Painel para a Tabela de Disponibilidades
         JPanel painelTabela = new JPanel(new BorderLayout());
         painelTabela.setBackground(BRANCO);
         painelTabela.setBorder(BorderFactory.createTitledBorder(
-            BorderFactory.createEtchedBorder(), "Disponibilidades Registradas para o Espaço",
+            BorderFactory.createEtchedBorder(), "Disponibilidades Registradas para o Espaço Selecionado",
              javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION,
              javax.swing.border.TitledBorder.DEFAULT_POSITION,
             new Font("Segoe UI", Font.BOLD, 14), PRETO_SUAVE
         ));
 
         String[] colunasTabelaDisp = {"Dia da Semana", "Hora Início", "Hora Fim", "Ações"};
-        this.modeloTabelaDisponibilidades = new DefaultTableModel(colunasTabelaDisp, 0) {
+        this.modeloTabelaDisponibilidades = new DefaultTableModel(colunasTabelaDisp, 0) { // Campo da classe
             @Override
             public boolean isCellEditable(int row, int column) { return column == (colunasTabelaDisp.length - 1); }
         };
         JTable tabelaDisponibilidades = new JTable(this.modeloTabelaDisponibilidades);
-        tabelaDisponibilidades.setRowHeight(28);
+        tabelaDisponibilidades.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        tabelaDisponibilidades.setRowHeight(30); // Aumentar altura da linha para botões de ação
+        tabelaDisponibilidades.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 15));
+        tabelaDisponibilidades.getTableHeader().setBackground(CINZA_CLARO);
+        tabelaDisponibilidades.getTableHeader().setForeground(PRETO_SUAVE);
+        // Ações da tabela (Renderer/Editor) serão adicionadas no Passo 2.
+        // Configurar a coluna "Ações" para a tabela de disponibilidades
+        int indiceColunaAcoesDisp = this.modeloTabelaDisponibilidades.getColumnCount() - 1;
+        if (indiceColunaAcoesDisp >= 0 && this.modeloTabelaDisponibilidades.getColumnName(indiceColunaAcoesDisp).equals("Ações")) {
+
+            AcoesTabelaCellRendererEditor rendererEditorDisp = new AcoesTabelaCellRendererEditor(tabelaDisponibilidades);
+            // Por enquanto, só o botão Excluir terá funcionalidade. O Editar mostrará uma mensagem.
+            // Se AcoesTabelaPanel for refatorado para aceitar quais botões mostrar, isso pode ser ajustado.
+
+            tabelaDisponibilidades.getColumnModel().getColumn(indiceColunaAcoesDisp).setCellRenderer(rendererEditorDisp);
+            tabelaDisponibilidades.getColumnModel().getColumn(indiceColunaAcoesDisp).setCellEditor(rendererEditorDisp);
+
+            tabelaDisponibilidades.getColumnModel().getColumn(indiceColunaAcoesDisp).setPreferredWidth(85);
+            tabelaDisponibilidades.getColumnModel().getColumn(indiceColunaAcoesDisp).setMinWidth(80);
+            tabelaDisponibilidades.getColumnModel().getColumn(indiceColunaAcoesDisp).setMaxWidth(100);
+
+            // ActionListener para o botão Excluir (a ser implementado no Passo 4)
+            rendererEditorDisp.addActionListenerParaExcluir(e -> {
+                int linhaSelecionadaVisual = tabelaDisponibilidades.getSelectedRow();
+                int linhaModelo = -1;
+                if (linhaSelecionadaVisual != -1) {
+                    linhaModelo = tabelaDisponibilidades.convertRowIndexToModel(linhaSelecionadaVisual);
+                } else {
+                    linhaModelo = tabelaDisponibilidades.getEditingRow();
+                }
+
+                if (linhaModelo != -1) {
+                    removerDisponibilidade(linhaModelo);
+
+                } else {
+                    JOptionPane.showMessageDialog(TelaPrincipalUI.this,
+                                                "Por favor, selecione um registro para remover.",
+                                                "Aviso", JOptionPane.WARNING_MESSAGE);
+                }
+            });
+
+            rendererEditorDisp.addActionListenerParaEditar(e -> {
+                JOptionPane.showMessageDialog(TelaPrincipalUI.this,
+                                            "Para editar uma disponibilidade, defina-a novamente usando os campos acima e clique em 'Salvar Disponibilidade'.",
+                                            "Informação", JOptionPane.INFORMATION_MESSAGE);
+            });
+        }
         JScrollPane scrollPaneTabelaDisp = new JScrollPane(tabelaDisponibilidades);
         painelTabela.add(scrollPaneTabelaDisp, BorderLayout.CENTER);
 
-        painelPrincipalAba.add(painelControles, BorderLayout.NORTH);
+        // Painel Superior (Título + Controles)
+        JPanel painelSuperiorAba = new JPanel(new BorderLayout(0,15)); // Espaçamento entre título e controles
+        painelSuperiorAba.setOpaque(false);
+        painelSuperiorAba.add(tituloHorarios, BorderLayout.NORTH);
+        painelSuperiorAba.add(painelControles, BorderLayout.CENTER);
+
+        painelPrincipalAba.add(painelSuperiorAba, BorderLayout.NORTH);
         painelPrincipalAba.add(painelTabela, BorderLayout.CENTER);
 
-        atualizarTabelaDisponibilidades();
-
+        // Chamada inicial para popular a tabela (será implementada no Passo 2)
+        // atualizarTabelaDisponibilidades();
+        System.out.println("<<< criarPainelHorariosDisponiveis() concluído.");
         return painelPrincipalAba;
     }
 
     private void atualizarTabelaDisponibilidades() {
-        if (this.modeloTabelaDisponibilidades == null) return;
-        this.modeloTabelaDisponibilidades.setRowCount(0);
-        System.out.println("Método atualizarTabelaDisponibilidades chamado (implementação pendente).");
-    }
-    /*
-    private void configurarBotaoAba(JButton botao, ImageIcon icone) {
-        botao.setFont(new Font("Segoe UI", Font.BOLD, 15)); // Fonte um pouco maior e bold
-        botao.setForeground(PRETO_SUAVE);
-        botao.setBackground(CINZA_CLARO); // Cor de fundo da navbar
-        botao.setOpaque(false); // Importante para o hover funcionar bem com a navbar
-        botao.setFocusPainted(false);
-        botao.setBorderPainted(false);
-        botao.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        botao.setHorizontalAlignment(SwingConstants.LEFT); // Alinhar conteúdo à esquerda
-        botao.setIconTextGap(10); // Espaço entre ícone e texto
+        System.out.println(">>> Iniciando atualizarTabelaDisponibilidades()...");
+        if (this.modeloTabelaDisponibilidades == null) {
+            System.out.println("modeloTabelaDisponibilidades é nulo. Abortando atualização.");
+            return;
+        }
+        this.modeloTabelaDisponibilidades.setRowCount(0); // Limpa a tabela
 
-        if (icone != null) {
-            botao.setIcon(new ImageIcon(icone.getImage().getScaledInstance(20, 20, Image.SCALE_SMOOTH))); // Ícone um pouco maior
+        Espaco espacoSelecionado = null;
+        if (this.comboBoxEspacosDisponibilidade != null &&
+            this.comboBoxEspacosDisponibilidade.getSelectedItem() instanceof Espaco) {
+            espacoSelecionado = (Espaco) this.comboBoxEspacosDisponibilidade.getSelectedItem();
+            System.out.println("Espaço selecionado para filtro de disponibilidade: " + (espacoSelecionado != null ? espacoSelecionado.getNome() : "Nenhum"));
+        } else {
+            System.out.println("Nenhum espaço selecionado no ComboBox de Disponibilidade ou ComboBox não inicializado. Tabela ficará vazia.");
+            return; // Se nenhum espaço estiver selecionado, não há o que mostrar.
         }
 
-        // Efeito Hover Simples (muda a cor do texto ou fundo levemente)
-        botao.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseEntered(java.awt.event.MouseEvent evt) {
-                botao.setForeground(VERDE_PRINCIPAL); // Mudar cor do texto no hover
-                // ou botao.setBackground(botao.getBackground().brighter());
-                // botao.setOpaque(true); // Se for mudar o fundo
-            }
+        if (this.listaDisponibilidades == null) {
+            System.out.println("listaDisponibilidades é nula. Tabela ficará vazia.");
+            return;
+        }
 
-            public void mouseExited(java.awt.event.MouseEvent evt) {
-                botao.setForeground(PRETO_SUAVE); // Volta à cor original
-                // ou botao.setBackground(CINZA_CLARO);
-                // botao.setOpaque(false);
+        int disponibilidadesAdicionadas = 0;
+        for (DisponibilidadeEspaco disp : this.listaDisponibilidades) {
+            if (disp != null && disp.getEspaco() != null && espacoSelecionado != null && disp.getEspaco().getId().equals(espacoSelecionado.getId())) {
+                this.modeloTabelaDisponibilidades.addRow(new Object[]{
+                    disp.getDiaDaSemana() != null ? disp.getDiaDaSemana().getNomeFormatado() : "N/A",
+                    disp.getHoraInicioFormatada(),
+                    disp.getHoraFimFormatada(),
+                    null // Para a coluna de ações (botões)
+                });
+                disponibilidadesAdicionadas++;
             }
-        });
+        }
+        System.out.println(disponibilidadesAdicionadas + " registros de disponibilidade adicionados à tabela para o espaço: " + espacoSelecionado.getNome());
+        System.out.println("<<< atualizarTabelaDisponibilidades() concluído.");
     }
-    */
 
-    // Método main para teste (opcional, mas recomendado)
+    private void removerDisponibilidade(int linhaModeloTabelaFiltrada) {
+        System.out.println(">>> Iniciando removerDisponibilidade para linha da tabela (filtrada): " + linhaModeloTabelaFiltrada);
+
+        Espaco espacoSelecionadoFiltro = null;
+        if (this.comboBoxEspacosDisponibilidade != null &&
+            this.comboBoxEspacosDisponibilidade.getSelectedItem() instanceof Espaco) {
+            espacoSelecionadoFiltro = (Espaco) this.comboBoxEspacosDisponibilidade.getSelectedItem();
+        }
+
+        if (espacoSelecionadoFiltro == null) {
+            JOptionPane.showMessageDialog(this,
+                "Não foi possível identificar o espaço selecionado para remover a disponibilidade.",
+                "Erro Interno", JOptionPane.ERROR_MESSAGE);
+            System.err.println("Erro em removerDisponibilidade: espacoSelecionadoFiltro é nulo.");
+            return;
+        }
+        System.out.println("Removendo disponibilidade do espaço: " + espacoSelecionadoFiltro.getNome());
+
+        // A linhaModeloTabelaFiltrada é o índice da *visão filtrada* da tabela.
+        // Precisamos encontrar o objeto DisponibilidadeEspaco correspondente na lista global.
+        // Primeiro, criamos uma sub-lista temporária das disponibilidades que estão atualmente na tabela.
+        List<DisponibilidadeEspaco> disponibilidadesExibidas = new ArrayList<>();
+        if (this.listaDisponibilidades != null) {
+            for (DisponibilidadeEspaco disp : this.listaDisponibilidades) {
+                if (disp.getEspaco().getId().equals(espacoSelecionadoFiltro.getId())) {
+                    disponibilidadesExibidas.add(disp);
+                }
+            }
+        }
+
+        if (linhaModeloTabelaFiltrada >= 0 && linhaModeloTabelaFiltrada < disponibilidadesExibidas.size()) {
+            DisponibilidadeEspaco dispParaRemoverDaListaOriginal = disponibilidadesExibidas.get(linhaModeloTabelaFiltrada);
+            System.out.println("Disponibilidade para remover (identificada pela tabela): " + dispParaRemoverDaListaOriginal.toString());
+
+            int confirmacao = JOptionPane.showConfirmDialog(
+                this,
+                "Tem certeza que deseja remover a disponibilidade para " +
+                dispParaRemoverDaListaOriginal.getEspaco().getNome() + " na " +
+                dispParaRemoverDaListaOriginal.getDiaDaSemana().getNomeFormatado() + " de " +
+                dispParaRemoverDaListaOriginal.getHoraInicioFormatada() + " às " + dispParaRemoverDaListaOriginal.getHoraFimFormatada() + "?",
+                "Confirmar Remoção de Disponibilidade",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.WARNING_MESSAGE
+            );
+
+            if (confirmacao == JOptionPane.YES_OPTION) {
+                // Remover da lista GLOBAL 'listaDisponibilidades' usando o ID do objeto.
+                boolean removidoComSucesso = this.listaDisponibilidades.removeIf(
+                    d -> d.getId().equals(dispParaRemoverDaListaOriginal.getId())
+                );
+
+                if (removidoComSucesso) {
+                    System.out.println("Disponibilidade com ID " + dispParaRemoverDaListaOriginal.getId() + " removida da listaDisponibilidades.");
+                    GerenciadorCSVDados.salvarDisponibilidadesNoCSV(ARQUIVO_DISPONIBILIDADES_CSV, this.listaDisponibilidades);
+                    atualizarTabelaDisponibilidades(); // Atualiza a UI da tabela
+                    JOptionPane.showMessageDialog(this, "Disponibilidade removida com sucesso!", "Sucesso", JOptionPane.INFORMATION_MESSAGE);
+                    System.out.println("Disponibilidades salvas no CSV e tabela atualizada após remoção.");
+                } else {
+                    System.err.println("Falha ao remover disponibilidade da listaDisponibilidades (ID: " + dispParaRemoverDaListaOriginal.getId() + " não encontrado na lista global, o que é inesperado).");
+                     JOptionPane.showMessageDialog(this, "Erro: A disponibilidade não pôde ser encontrada na lista principal para remoção.", "Erro Interno", JOptionPane.ERROR_MESSAGE);
+                }
+            } else {
+                System.out.println("Remoção de disponibilidade cancelada pelo usuário.");
+            }
+        } else {
+            System.err.println("Índice de linha inválido (" + linhaModeloTabelaFiltrada + ") para a lista de disponibilidades exibidas (tamanho: " + disponibilidadesExibidas.size() + ").");
+            JOptionPane.showMessageDialog(this, "Erro: Índice da linha selecionada é inválido.", "Erro Interno", JOptionPane.ERROR_MESSAGE);
+        }
+        System.out.println("<<< removerDisponibilidade() concluído.");
+    }
+
+    // Método para carregar ícones (versão flexível)
+    private ImageIcon loadIcon(String path) {
+        try {
+            File fileFromPath = new File(path);
+            if (fileFromPath.isAbsolute() && fileFromPath.exists()) {
+                return new ImageIcon(path);
+            }
+            String basePathIcons = "demo/src/main/resources/icons/";
+            File iconFile = new File(basePathIcons + path);
+            if (iconFile.exists()) {
+                return new ImageIcon(iconFile.getAbsolutePath());
+            } else {
+                String basePathResources = "demo/src/main/resources/";
+                File resourceFile = new File(basePathResources + path);
+                if (resourceFile.exists()) {
+                    return new ImageIcon(resourceFile.getAbsolutePath());
+                } else {
+                    System.err.println("Ícone não encontrado em /icons/ ou /resources/: " + path);
+                    return null;
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Erro ao carregar ícone: " + path + " - " + e.getMessage());
+            // e.printStackTrace(); // Descomentar para debug detalhado do erro do ícone
+            return null;
+        }
+    }
+
+    // Main para testes isolados da TelaPrincipalUI
     public static void main(String[] args) {
-        // Adicionar um System.out.println para verificar o CWD se o ícone não carregar.
-        // System.out.println("Current Working Directory: " + System.getProperty("user.dir"));
         try {
             UIManager.setLookAndFeel(new FlatLightLaf());
-            UIManager.put("Button.arc", 12);
-            UIManager.put("Component.arc", 12);
-            UIManager.put("ProgressBar.arc", 12);
-            UIManager.put("TextComponent.arc", 12);
-            UIManager.put("Button.background", Color.decode("#007a3e"));
-            UIManager.put("Button.foreground", Color.WHITE);
-            UIManager.put("TextField.focusedBorderColor", Color.decode("#007a3e"));
-            UIManager.put("PasswordField.focusedBorderColor", Color.decode("#007a3e"));
+            UIManager.put("Button.arc", 10); // Arredondamento global de botões
+            UIManager.put("Component.arc", 10); // Arredondamento para outros componentes
+            UIManager.put("ProgressBar.arc", 10);
+            UIManager.put("TextComponent.arc", 6); // Leve arredondamento para campos de texto
+            UIManager.put("Table.selectionBackground", new Color(180, 215, 255)); // Cor de seleção mais suave para tabelas
+            UIManager.put("Table.selectionForeground", Color.BLACK);
         } catch (Exception e) {
             e.printStackTrace();
         }
-
         SwingUtilities.invokeLater(() -> new TelaPrincipalUI().setVisible(true));
     }
 }
-
-[end of demo/src/main/java/espaco_capita/TelaPrincipalUI.java]
