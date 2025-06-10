@@ -198,52 +198,109 @@ public class TelaPrincipalUI extends JFrame {
         painelPrincipal.add(this.painelConteudo, BorderLayout.CENTER);
 
         // ActionListeners para abas (serão completados quando os métodos criarPainel... forem refeitos)
-        // Exemplo para abaEspacosSidebar (a lógica completa será refeita depois):
         abaEspacosSidebar.addActionListener(e -> {
-            // ((CardLayout) this.painelConteudo.getLayout()).show(this.painelConteudo, "painelEspacos");
-            System.out.println("Botão Espaços clicado - painel será carregado no próximo passo.");
-        });
-        abaAgendasSidebar.addActionListener(e -> {
-            System.out.println("Botão Agendas clicado - painel será carregado no próximo passo.");
-        });
-        abaHorariosDisponiveis.addActionListener(e -> {
-            final String NOME_PAINEL = "painelHorariosDisponiveis"; // Usar uma constante
-            // Verifica se o painel já existe no CardLayout
-            boolean painelJaExiste = false;
-            Component painelExistente = null;
+            final String NOME_PAINEL = "painelEspacos";
+            System.out.println("Botão Espaços clicado. Tentando mostrar painel: " + NOME_PAINEL);
+
+            Component painelAlvo = null;
             for (Component comp : painelConteudo.getComponents()) {
                 if (comp.getName() != null && comp.getName().equals(NOME_PAINEL)) {
-                    painelJaExiste = true;
-                    painelExistente = comp; // Guarda referência se existir
+                    painelAlvo = comp;
                     break;
                 }
             }
 
-            if (!painelJaExiste) {
-                System.out.println("Criando novo painelHorariosDisponiveis...");
-                JPanel novoPainel = criarPainelHorariosDisponiveis();
-                novoPainel.setName(NOME_PAINEL);
-                this.painelConteudo.add(novoPainel, NOME_PAINEL);
-                ((CardLayout) this.painelConteudo.getLayout()).show(this.painelConteudo, NOME_PAINEL);
-            } else {
-                System.out.println("Painel painelHorariosDisponiveis já existe. Apenas mostrando.");
-                // Se o painel já existe, talvez seja necessário chamar um método para atualizar seus dados,
-                // como o ComboBox de espaços, caso a lista de espaços tenha mudado desde a última vez.
-                // Por exemplo: if (painelExistente instanceof JPanel) { /* lógica para atualizar dados */ }
-                // E também chamar atualizarTabelaDisponibilidades() para recarregar a tabela com o espaço selecionado.
-                if (this.comboBoxEspacosDisponibilidade != null && this.comboBoxEspacosDisponibilidade.getItemCount() > 0) {
-                     if(this.comboBoxEspacosDisponibilidade.getSelectedIndex() == -1) { // se nada estiver selecionado
-                        this.comboBoxEspacosDisponibilidade.setSelectedIndex(0); // seleciona o primeiro
-                     } else {
-                        // Força a atualização da tabela com base no item já selecionado
-                        atualizarTabelaDisponibilidades();
-                     }
+            if (painelAlvo == null) {
+                System.out.println("Painel " + NOME_PAINEL + " não encontrado. Criando novo...");
+                JPanel novoPainel = criarPainelEspacos(); // Método que retorna o JPanel da aba Espaços
+                if (novoPainel != null) {
+                    novoPainel.setName(NOME_PAINEL);
+                    this.painelConteudo.add(novoPainel, NOME_PAINEL);
+                    System.out.println("Painel " + NOME_PAINEL + " criado e adicionado ao CardLayout.");
                 } else {
-                     // Se o combobox estiver vazio (ex: nenhum espaço cadastrado), limpa a tabela.
-                     if(this.modeloTabelaDisponibilidades != null) this.modeloTabelaDisponibilidades.setRowCount(0);
+                    System.err.println("Erro: criarPainelEspacos() retornou null!");
+                    return;
                 }
-                ((CardLayout) this.painelConteudo.getLayout()).show(this.painelConteudo, NOME_PAINEL);
+            } else {
+                System.out.println("Painel " + NOME_PAINEL + " já existe. Apenas mostrando.");
+                // Se o painel já existe, pode ser necessário chamar um método para atualizar seus dados,
+                // como o ComboBox de espaços em outras abas, ou a própria tabela.
+                // Ex: if (painelAlvo instanceof JPanel) { /* atualizar dados se necessário */ }
+                // Para a aba Espaços, geralmente a atualização da tabela é feita após CRUD.
+                // Uma chamada a atualizarTabelaEspacos() aqui pode ser útil se os dados podem mudar externamente.
+                // atualizarTabelaEspacos(); // Opcional, dependendo da necessidade de refresh ao mostrar.
             }
+
+            ((CardLayout) this.painelConteudo.getLayout()).show(this.painelConteudo, NOME_PAINEL);
+            System.out.println("CardLayout.show() chamado para " + NOME_PAINEL);
+        });
+
+        abaAgendasSidebar.addActionListener(e -> {
+            final String NOME_PAINEL = "painelAgendas";
+            System.out.println("Botão Agendas clicado. Tentando mostrar painel: " + NOME_PAINEL);
+
+            Component painelAlvo = null;
+            for (Component comp : painelConteudo.getComponents()) {
+                if (comp.getName() != null && comp.getName().equals(NOME_PAINEL)) {
+                    painelAlvo = comp;
+                    break;
+                }
+            }
+
+            if (painelAlvo == null) {
+                System.out.println("Painel " + NOME_PAINEL + " não encontrado. Criando novo...");
+                JPanel novoPainel = criarPainelAgendas(); // Método que retorna o JPanel da aba Agendas
+                if (novoPainel != null) {
+                    novoPainel.setName(NOME_PAINEL);
+                    this.painelConteudo.add(novoPainel, NOME_PAINEL);
+                    System.out.println("Painel " + NOME_PAINEL + " criado e adicionado ao CardLayout.");
+                } else {
+                    System.err.println("Erro: criarPainelAgendas() retornou null!");
+                    return;
+                }
+            } else {
+                System.out.println("Painel " + NOME_PAINEL + " já existe. Apenas mostrando.");
+                // Atualizar o ComboBox de espaços aqui, caso a lista de espaços tenha mudado
+                atualizarComboBoxEspacosAgendamento(); // Garante que o combobox na aba agendas esteja atualizado
+                atualizarTabelaAgendamentos(); // E atualiza a tabela de agendamentos com base na seleção
+            }
+
+            ((CardLayout) this.painelConteudo.getLayout()).show(this.painelConteudo, NOME_PAINEL);
+            System.out.println("CardLayout.show() chamado para " + NOME_PAINEL);
+        });
+
+        abaHorariosDisponiveis.addActionListener(e -> {
+            final String NOME_PAINEL = "painelHorariosDisponiveis";
+            System.out.println("Botão Disponibilidade clicado. Tentando mostrar painel: " + NOME_PAINEL);
+
+            Component painelAlvo = null;
+            for (Component comp : painelConteudo.getComponents()) {
+                if (comp.getName() != null && comp.getName().equals(NOME_PAINEL)) {
+                    painelAlvo = comp;
+                    break;
+                }
+            }
+
+            if (painelAlvo == null) {
+                System.out.println("Painel " + NOME_PAINEL + " não encontrado. Criando novo...");
+                JPanel novoPainel = criarPainelHorariosDisponiveis(); // Método que retorna o JPanel da aba Disponibilidade
+                if (novoPainel != null) {
+                    novoPainel.setName(NOME_PAINEL);
+                    this.painelConteudo.add(novoPainel, NOME_PAINEL);
+                    System.out.println("Painel " + NOME_PAINEL + " criado e adicionado ao CardLayout.");
+                } else {
+                    System.err.println("Erro: criarPainelHorariosDisponiveis() retornou null!");
+                    return;
+                }
+            } else {
+                System.out.println("Painel " + NOME_PAINEL + " já existe. Apenas mostrando.");
+                // Atualizar o ComboBox de espaços aqui, caso a lista de espaços tenha mudado
+                atualizarComboBoxEspacosDisponibilidade(); // Garante que o combobox na aba disponibilidade esteja atualizado
+                atualizarTabelaDisponibilidades(); // E atualiza a tabela de disponibilidades com base na seleção
+            }
+
+            ((CardLayout) this.painelConteudo.getLayout()).show(this.painelConteudo, NOME_PAINEL);
+            System.out.println("CardLayout.show() chamado para " + NOME_PAINEL);
         });
 
         // Mostrar painel default inicialmente
